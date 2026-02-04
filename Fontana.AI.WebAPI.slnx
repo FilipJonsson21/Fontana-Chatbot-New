@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Fontana.AI.Data/Fontana.AI.Data.csproj" />
+  <Project Path="Fontana.AI.Models/Fontana.AI.Models.csproj" />
+  <Project Path="Fontana.AI.Services/Fontana.AI.Services.csproj" />
+  <Project Path="Fontana.AI.WebAPI/Fontana.AI.WebAPI.csproj" />
+</Solution>
