@@ -9,14 +9,18 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin() // Tillåter alla källor (bra för utveckling)
-              .AllowAnyMethod() // Tillåter POST, GET etc.
-              .AllowAnyHeader(); // Tillåter alla headers
+        policy.AllowAnyOrigin() // Tillï¿½ter alla kï¿½llor (bra fï¿½r utveckling)
+              .AllowAnyMethod() // Tillï¿½ter POST, GET etc.
+              .AllowAnyHeader(); // Tillï¿½ter alla headers
     });
 });
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorNumbersToAdd: null)));
 
 builder.Services.AddScoped<IChatService, ChatService>(); 
 
@@ -33,7 +37,7 @@ app.UseCors();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi(); // Denna ska finnas EN gång
+    app.MapOpenApi(); // Denna ska finnas EN gï¿½ng
     app.MapScalarApiReference(); // Denna kopplar ihop Scalar med OpenAPI
 }
 
