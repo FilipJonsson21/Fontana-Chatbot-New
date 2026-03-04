@@ -1,35 +1,63 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using Fontana.AI.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace Fontana.AI.Services
 {
     public class DabasClient
     {
         private readonly HttpClient _httpClient;
-        private readonly string _apiKey = "DIN_DABAS_API_NYCKEL_HÄR"; // Byt ut mot din nyckel
+        private readonly string _apiKey;
+        private readonly string _supplierGln;
 
-        public DabasClient(HttpClient httpClient)
+        public DabasClient(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
-            // DABAS kräver ofta en User-Agent eller specifik header
+            _apiKey = configuration["Dabas:ApiKey"] ?? "";
+            _supplierGln = configuration["Dabas:SupplierGln"] ?? "";
+
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "FontanaAiBot");
         }
 
-        public async Task<DabasProduct?> GetProductByGtinAsync(string gtin)
+        // Hämtar alla Fontanas produkter via leverantörens GLN-nummer
+        public async Task<List<DabasProduct>> GetAllProductsBySupplierGlnAsync()
         {
+            if (string.IsNullOrEmpty(_apiKey) || string.IsNullOrEmpty(_supplierGln))
+                return new List<DabasProduct>();
+
             try
             {
-                // Exempel på endpoint: https://api.dabas.com/v1/article/{gtin}
-                // OBS: Kontrollera exakt URL i din DABAS-dokumentation
-                var url = $"https://api.dabas.com/v1/article/{gtin}?apikey={_apiKey}";
-
+                var url = $"https://api.dabas.com/DABASService/V2/articles/GLN/{_supplierGln}/JSON?apikey={_apiKey}";
                 var response = await _httpClient.GetAsync(url);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // Här mappar vi JSON-svaret till vår modell
-                    return await response.Content.ReadFromJsonAsync<DabasProduct>();
+                    var products = await response.Content.ReadFromJsonAsync<List<DabasProduct>>();
+                    return products ?? new List<DabasProduct>();
                 }
+
+                return new List<DabasProduct>();
+            }
+            catch (Exception)
+            {
+                return new List<DabasProduct>();
+            }
+        }
+
+        // Hämtar en enskild produkt via GTIN (streckkod)
+        public async Task<DabasProduct?> GetProductByGtinAsync(string gtin)
+        {
+            if (string.IsNullOrEmpty(_apiKey))
+                return null;
+
+            try
+            {
+                var url = $"https://api.dabas.com/DABASService/V2/article/gtin/{gtin}/JSON?apikey={_apiKey}";
+                var response = await _httpClient.GetAsync(url);
+
+                if (response.IsSuccessStatusCode)
+                    return await response.Content.ReadFromJsonAsync<DabasProduct>();
+
                 return null;
             }
             catch (Exception)
