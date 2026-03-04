@@ -66,10 +66,14 @@ namespace Fontana.AI.Services
                 {
                     _logger.LogDebug("Produkter hämtades från cache ({Count} st)", products.Count);
                 }
-                string dabasProductInfo = products.Any()
-                    ? string.Join("\n", products.Select(p =>
+                // Filtrera produkter baserat på nyckelord i användarens fråga (max 30 st för att hålla nere tokens)
+                var relevantProducts = FilterRelevantProducts(products, userMessage, maxCount: 30);
+                string dabasProductInfo = relevantProducts.Any()
+                    ? string.Join("\n", relevantProducts.Select(p =>
                         $"Produkt: {p.ProductName} | GTIN: {p.Gtin} | Ingredienser: {p.Ingredients} | Allergener: {p.Allergens} | Ursprung: {p.Origin} | Näring: {p.Nutrition}"))
-                    : "[Inga produkter synkade ännu – kör POST /api/dabas/sync för att hämta produkter]";
+                    : products.Any()
+                        ? "[Inga produkter matchade din fråga – försök med ett mer specifikt produktnamn]"
+                        : "[Inga produkter synkade ännu – kör POST /api/dabas/sync för att hämta produkter]";
 
                 // 4. Initiera OpenAI-klienten (GPT-4o)
                 ChatClient client = new(model: "gpt-4o", _apiKey);
@@ -131,6 +135,38 @@ VIKTIGA REGLER FÖR DINA SVAR:
                 // Returnerar felet så det syns i gränssnittet under utveckling
                 return $"Ett fel uppstod i ChatService: {ex.Message}";
             }
+        }
+        // Filtrerar produkter baserat på nyckelord i frågan — returnerar de mest relevanta
+        private static List<DabasProduct> FilterRelevantProducts(List<DabasProduct> products, string query, int maxCount)
+        {
+            if (!products.Any()) return [];
+
+            // Dela upp frågan i ord och filtrera bort korta stoppord
+            var keywords = query
+                .ToLowerInvariant()
+                .Split([' ', ',', '.', '?', '!', '-'], StringSplitOptions.RemoveEmptyEntries)
+                .Where(w => w.Length > 2)
+                .ToArray();
+
+            if (keywords.Length == 0)
+                return products.Take(maxCount).ToList();
+
+            // Poängsätt varje produkt baserat på hur många nyckelord som matchar
+            var scored = products
+                .Select(p =>
+                {
+                    var searchText = $"{p.ProductName} {p.Ingredients} {p.Allergens} {p.Origin}".ToLowerInvariant();
+                    int score = keywords.Count(kw => searchText.Contains(kw));
+                    return (Product: p, Score: score);
+                })
+                .Where(x => x.Score > 0)
+                .OrderByDescending(x => x.Score)
+                .Take(maxCount)
+                .Select(x => x.Product)
+                .ToList();
+
+            // Om ingen matchning — returnera de första produkterna som fallback
+            return scored.Any() ? scored : products.Take(maxCount).ToList();
         }
     }
 }
