@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fontana Kundsupport AI</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .chat-container { width: 400px; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; height: 600px; }
+        .header { background-color: #003366; color: white; padding: 20px; text-align: center; font-weight: bold; font-size: 18px; }
+        .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message { padding: 10px 15px; border-radius: 20px; max-width: 80%; line-height: 1.4; font-size: 14px; }
+        .user { align-self: flex-end; background-color: #003366; color: white; border-bottom-right-radius: 2px; }
+        .bot { align-self: flex-start; background-color: #e9ecef; color: #333; border-bottom-left-radius: 2px; }
+        .input-area { display: flex; border-top: 1px solid #ddd; padding: 10px; background: white; }
+        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
+        button { background-color: #FFCC00; border: none; padding: 10px 20px; margin-left: 10px; border-radius: 20px; cursor: pointer; font-weight: bold; color: #003366; }
+        button:hover { background-color: #e6b800; }
+    </style>
+</head>
+<body>
+<div class="chat-container">
+    <div class="header">Fontana Kundsupport</div>
+    <div class="messages" id="messages">
+        <div class="message bot">Hej! Jag är Fontanas AI-assistent. Vad kan jag hjälpa dig med idag?</div>
+    </div>
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Skriv din fråga här..." onkeypress="handleEnter(event)">
+        <button onclick="sendMessage()">Skicka</button>
+    </div>
+</div>
+<script>
+    const history = [];
+
+    async function sendMessage() {
+        const input = document.getElementById('userInput');
+        const text = input.value.trim();
+        const messagesDiv = document.getElementById('messages');
+        if (!text) return;
+
+        messagesDiv.innerHTML += `<div class="message user">${text}</div>`;
+        input.value = '';
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        history.push({ role: 'user', content: text });
+
+        try {
+            const response = await fetch('/api/chat/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text, history: history })
+            });
+
+            if (!response.ok) throw new Error('Servern svarade med fel: ' + response.status);
+
+            const data = await response.json();
+            history.push({ role: 'assistant', content: data.answer });
+
+            messagesDiv.innerHTML += `<div class="message bot">${data.answer}</div>`;
+        } catch (error) {
+            messagesDiv.innerHTML += `<div class="message bot" style="color:red;">Kunde inte ansluta till AI:n. Är servern igång?</div>`;
+            console.error(error);
+        }
+
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function handleEnter(e) {
+        if (e.key === 'Enter') sendMessage();
+    }
+</script>
+</body>
+</html>
