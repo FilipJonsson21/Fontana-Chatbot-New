@@ -159,11 +159,20 @@ VIKTIGA REGLER FÖR DINA SVAR:
         {
             if (!products.Any()) return ([], false);
 
-            // Dela upp frågan i ord och filtrera bort korta stoppord
+            // Svenska stoppord som inte bidrar till produktmatchning
+            var stopwords = new HashSet<string>
+            {
+                "det", "den", "ett", "och", "för", "med", "har", "är", "inte",
+                "som", "kan", "ska", "vad", "var", "hur", "alla", "era", "ert",
+                "din", "dina", "sin", "sina", "men", "att", "sig", "där", "här",
+                "från", "till", "inom", "utan", "även", "just", "lite", "mer"
+            };
+
+            // Dela upp frågan i ord och filtrera bort korta ord och stoppord
             var keywords = query
                 .ToLowerInvariant()
                 .Split([' ', ',', '.', '?', '!', '-'], StringSplitOptions.RemoveEmptyEntries)
-                .Where(w => w.Length > 2)
+                .Where(w => w.Length > 2 && !stopwords.Contains(w))
                 .ToArray();
 
             if (keywords.Length == 0)
