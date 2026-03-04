@@ -24,7 +24,7 @@ namespace Fontana.AI.Services
             _logger.LogInformation("Hämtar produkt från DABAS med GTIN: {Gtin}", gtin);
             try
             {
-                var url = $"https://api.dabas.com/DABASService.svc/article/{gtin}/JSON?apikey={_apiKey}";
+                var url = $"https://api.dabas.com/DABASService/V2/article/gtin/{gtin}/JSON?apikey={_apiKey}";
                 var response = await _httpClient.GetAsync(url);
 
                 if (response.IsSuccessStatusCode)
@@ -49,7 +49,7 @@ namespace Fontana.AI.Services
             _logger.LogInformation("Hämtar produkter från DABAS för GLN: {Gln}", supplierGln);
             try
             {
-                var url = $"https://api.dabas.com/DABASService.svc/articles/supplier/{supplierGln}/JSON?apikey={_apiKey}";
+                var url = $"https://api.dabas.com/DABASService/V2/articles/gln/{supplierGln}/JSON?apikey={_apiKey}";
                 var response = await _httpClient.GetAsync(url);
 
                 if (response.IsSuccessStatusCode)
