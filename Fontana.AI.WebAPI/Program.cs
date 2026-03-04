@@ -32,12 +32,20 @@ builder.Services.AddHttpClient<DabasClient>();
 
 var app = builder.Build();
 
+// Skapa och migrera databasen automatiskt vid uppstart (Development)
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+}
+
 app.UseCors();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi(); // Denna ska finnas EN g�ng
+    app.MapOpenApi(); // Denna ska finnas EN gång
     app.MapScalarApiReference(); // Denna kopplar ihop Scalar med OpenAPI
 }
 
