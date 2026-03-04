@@ -126,13 +126,20 @@ namespace Fontana.AI.Services
         // Mappar ett detaljsvar till DabasProduct-entitet
         private static DabasProduct MapDetailToProduct(DabasDetailDto detail, DabasListItemDto? listItem = null)
         {
+            // Fallback till listitemets namn om detaljsvaret saknar produktnamn
+            var produktnamn = !string.IsNullOrEmpty(detail.Produktnamn)
+                ? detail.Produktnamn
+                : listItem is not null && !string.IsNullOrEmpty(listItem.Produktnamn)
+                    ? listItem.Produktnamn
+                    : listItem?.Artikelbenamning ?? string.Empty;
+
             return new DabasProduct
             {
-                Gtin = detail.Gtin,
-                ProductName = detail.Produktnamn,
-                Ingredients = detail.Ingrediensforteckning,
-                Allergens = detail.Allergenpastande,
-                Origin = detail.Ursprungsland,
+                Gtin = detail.Gtin ?? string.Empty,
+                ProductName = produktnamn,
+                Ingredients = detail.Ingrediensforteckning ?? string.Empty,
+                Allergens = detail.Allergenpastande ?? string.Empty,
+                Origin = detail.Ursprungsland ?? string.Empty,
                 Nutrition = detail.Naringsvarden is not null
                     ? JsonSerializer.Serialize(detail.Naringsvarden)
                     : string.Empty
