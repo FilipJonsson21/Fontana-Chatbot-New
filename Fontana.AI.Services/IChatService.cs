@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using Fontana.AI.Models;
 
 namespace Fontana.AI.Services
 {
     public interface IChatService
     {
-        Task<string> GetAiResponseAsync(string userMessage);
+        Task<string> GetAiResponseAsync(string userMessage, IList<ConversationMessage>? history = null);
     }
 }

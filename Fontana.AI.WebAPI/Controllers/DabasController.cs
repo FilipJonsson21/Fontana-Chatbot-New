@@ -2,6 +2,7 @@ using Fontana.AI.Data;
 using Fontana.AI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 
 namespace Fontana.AI.WebAPI.Controllers
@@ -13,12 +14,15 @@ namespace Fontana.AI.WebAPI.Controllers
         private readonly DabasClient _dabasClient;
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IMemoryCache _cache;
+        private const string ProductCacheKey = "dabas_products";
 
-        public DabasController(DabasClient dabasClient, ApplicationDbContext context, IConfiguration configuration)
+        public DabasController(DabasClient dabasClient, ApplicationDbContext context, IConfiguration configuration, IMemoryCache cache)
         {
             _dabasClient = dabasClient;
             _context = context;
             _configuration = configuration;
+            _cache = cache;
         }
 
         [HttpPost("sync")]
@@ -46,6 +50,9 @@ namespace Fontana.AI.WebAPI.Controllers
 
             await _context.DabasProducts.AddRangeAsync(products);
             await _context.SaveChangesAsync();
+
+            // Rensa produktcachen så ChatService hämtar ny data nästa anrop
+            _cache.Remove(ProductCacheKey);
 
             return Ok(new { message = "Sync slutförd.", synced = products.Count });
         }
