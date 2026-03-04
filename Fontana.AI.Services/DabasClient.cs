@@ -100,7 +100,9 @@ namespace Fontana.AI.Services
         {
             try
             {
-                var detailUrl = $"https://api.dabas.com/DABASService/V2/article/gtin/{item.Gtin}/JSON?apikey={_apiKey}";
+                // DABAS detaljendpoint kräver 14-siffrigt GTIN (GTIN-14) med ledande nolla
+                var gtin14 = item.Gtin.PadLeft(14, '0');
+                var detailUrl = $"https://api.dabas.com/DABASService/V2/article/gtin/{gtin14}/JSON?apikey={_apiKey}";
                 var detailResponse = await _httpClient.GetAsync(detailUrl);
 
                 if (detailResponse.IsSuccessStatusCode)
