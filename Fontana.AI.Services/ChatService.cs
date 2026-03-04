@@ -151,12 +151,17 @@ VIKTIGA REGLER FÖR DINA SVAR:
             if (keywords.Length == 0)
                 return products.Take(maxCount).ToList();
 
-            // Poängsätt varje produkt baserat på hur många nyckelord som matchar
+            // Poängsätt varje produkt baserat på hur många nyckelord som matchar.
+            // Kontrollerar även omvänt (om ett produktord ingår i sökordet) för att hantera
+            // svenska sammansatta ord, t.ex. "olivoljeprodukter" matchar produkten "olivolja".
             var scored = products
                 .Select(p =>
                 {
                     var searchText = $"{p.ProductName} {p.Ingredients} {p.Allergens} {p.Origin}".ToLowerInvariant();
-                    int score = keywords.Count(kw => searchText.Contains(kw));
+                    var searchWords = searchText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    int score = keywords.Count(kw =>
+                        searchText.Contains(kw) ||
+                        searchWords.Any(sw => sw.Length > 3 && kw.StartsWith(sw)));
                     return (Product: p, Score: score);
                 })
                 .Where(x => x.Score > 0)
