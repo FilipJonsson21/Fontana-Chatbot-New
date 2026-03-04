@@ -11,5 +11,6 @@ namespace Fontana.AI.Data
         }
 
         public DbSet<FaqItem> Faqs { get; set; }
+        public DbSet<DabasProduct> DabasProducts { get; set; }
     }
 }

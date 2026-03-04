@@ -32,9 +32,12 @@ namespace Fontana.AI.Services
                 var faqs = await _context.Faqs.ToListAsync();
                 var faqContext = string.Join("\n", faqs.Select(f => $"Fråga: {f.Question} Svar: {f.Answer}"));
 
-                // 3. Förberedelse för DABAS-data (Placeholder tills DABAS-klienten är klar)
-                // Här kommer vi senare anropa DabasService.GetProductInfo(userMessage)
-                string dabasProductInfo = "[Ingen specifik produktinfo hämtad ännu]";
+                // 3. Hämta produktdata från databasen (synkad från DABAS)
+                var products = await _context.DabasProducts.ToListAsync();
+                string dabasProductInfo = products.Any()
+                    ? string.Join("\n", products.Select(p =>
+                        $"Produkt: {p.ProductName} | GTIN: {p.Gtin} | Ingredienser: {p.Ingredients} | Allergener: {p.Allergens} | Ursprung: {p.Origin} | Näring: {p.Nutrition}"))
+                    : "[Inga produkter synkade ännu – kör POST /api/dabas/sync för att hämta produkter]";
 
                 // 4. Initiera OpenAI-klienten (GPT-4o)
                 ChatClient client = new(model: "gpt-4o", _apiKey);

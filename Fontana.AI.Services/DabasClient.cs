@@ -1,17 +1,18 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using Fontana.AI.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace Fontana.AI.Services
 {
     public class DabasClient
     {
         private readonly HttpClient _httpClient;
-        private readonly string _apiKey = "DIN_DABAS_API_NYCKEL_HÄR"; // Byt ut mot din nyckel
+        private readonly string _apiKey;
 
-        public DabasClient(HttpClient httpClient)
+        public DabasClient(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
-            // DABAS kräver ofta en User-Agent eller specifik header
+            _apiKey = configuration["Dabas:ApiKey"] ?? "";
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "FontanaAiBot");
         }
 
@@ -19,15 +20,11 @@ namespace Fontana.AI.Services
         {
             try
             {
-                // Exempel på endpoint: https://api.dabas.com/v1/article/{gtin}
-                // OBS: Kontrollera exakt URL i din DABAS-dokumentation
-                var url = $"https://api.dabas.com/v1/article/{gtin}?apikey={_apiKey}";
-
+                var url = $"https://api.dabas.com/DABASService.svc/article/{gtin}/JSON?apikey={_apiKey}";
                 var response = await _httpClient.GetAsync(url);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // Här mappar vi JSON-svaret till vår modell
                     return await response.Content.ReadFromJsonAsync<DabasProduct>();
                 }
                 return null;
@@ -35,6 +32,27 @@ namespace Fontana.AI.Services
             catch (Exception)
             {
                 return null;
+            }
+        }
+
+        // Hämtar alla produkter för en leverantör via deras GLN-nummer
+        public async Task<List<DabasProduct>> GetProductsBySupplierGlnAsync(string supplierGln)
+        {
+            try
+            {
+                var url = $"https://api.dabas.com/DABASService.svc/articles/supplier/{supplierGln}/JSON?apikey={_apiKey}";
+                var response = await _httpClient.GetAsync(url);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var products = await response.Content.ReadFromJsonAsync<List<DabasProduct>>();
+                    return products ?? [];
+                }
+                return [];
+            }
+            catch (Exception)
+            {
+                return [];
             }
         }
     }
