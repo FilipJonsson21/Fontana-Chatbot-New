@@ -66,8 +66,25 @@ namespace Fontana.AI.Services
                 {
                     _logger.LogDebug("Produkter hämtades från cache ({Count} st)", products.Count);
                 }
-                // Filtrera produkter baserat på nyckelord i användarens fråga (max 30 st för att hålla nere tokens)
-                var relevantProducts = FilterRelevantProducts(products, userMessage, maxCount: 30);
+                // Filtrera produkter baserat på nyckelord i frågan + senaste historik,
+                // så att uppföljningsfrågor ("innehåller den gluten?") hittar rätt produkt
+                var filterQuery = BuildFilterQuery(userMessage, history, maxHistoryTurns: 2);
+                var (relevantProducts, hadProductMatches) = FilterRelevantProducts(products, filterQuery, maxCount: 30);
+
+                // Om frågan gäller allergener/ingredienser/glutenfritt och flera specifika produkter matchar,
+                // ställ en följdfråga istället för att gissa — 2–5 träffar är tillräckligt specifikt för att fråga tillbaka
+                var detailTriggers = new[] { "allergener", "ingredienser", "glutenfri", "glutenfritt", "innehåller" };
+                bool isDetailQuestion = detailTriggers.Any(t => userMessage.ToLowerInvariant().Contains(t));
+                if (isDetailQuestion && hadProductMatches && relevantProducts.Count is >= 2 and <= 5)
+                {
+                    var names = relevantProducts.Select(p => p.ProductName).ToList();
+                    string lista = names.Count == 2
+                        ? $"{names[0]} eller {names[1]}"
+                        : string.Join(", ", names[..^1]) + $" eller {names[^1]}";
+                    _logger.LogInformation("Klarifieringsfråga ställs — {Count} produkter matchade", names.Count);
+                    return $"Det finns flera produkter som matchar din fråga – vilken menar du? {lista}?";
+                }
+
                 string dabasProductInfo = relevantProducts.Any()
                     ? string.Join("\n", relevantProducts.Select(p =>
                         $"Produkt: {p.ProductName} | GTIN: {p.Gtin} | Ingredienser: {p.Ingredients} | Allergener: {p.Allergens} | Ursprung: {p.Origin} | Näring: {p.Nutrition}"))
@@ -136,27 +153,61 @@ VIKTIGA REGLER FÖR DINA SVAR:
                 return $"Ett fel uppstod i ChatService: {ex.Message}";
             }
         }
-        // Filtrerar produkter baserat på nyckelord i frågan — returnerar de mest relevanta
-        private static List<DabasProduct> FilterRelevantProducts(List<DabasProduct> products, string query, int maxCount)
+        // Kombinerar aktuell fråga med de senaste N användarturerna ur historiken.
+        // Gör att uppföljningsfrågor som "innehåller den gluten?" kan hitta rätt produkt
+        // tack vare att t.ex. "olivolja" finns kvar från föregående tur.
+        private static string BuildFilterQuery(string userMessage, IList<ConversationMessage>? history, int maxHistoryTurns)
         {
-            if (!products.Any()) return [];
+            if (history is null or { Count: 0 })
+                return userMessage;
 
-            // Dela upp frågan i ord och filtrera bort korta stoppord
+            var recentUserMessages = history
+                .Where(m => m.Role == "user")
+                .TakeLast(maxHistoryTurns)
+                .Select(m => m.Content);
+
+            return string.Join(" ", recentUserMessages.Append(userMessage));
+        }
+
+        // Filtrerar produkter baserat på nyckelord i frågan.
+        // Returnerar träfflistan samt en flagga som anger om produkterna matchades via poäng (true)
+        // eller om det är en fallback på de första N produkterna (false).
+        private static (List<DabasProduct> Products, bool HadMatches) FilterRelevantProducts(
+            List<DabasProduct> products, string query, int maxCount)
+        {
+            if (!products.Any()) return ([], false);
+
+            // Svenska stoppord som inte bidrar till produktmatchning
+            var stopwords = new HashSet<string>
+            {
+                "det", "den", "ett", "och", "för", "med", "har", "är", "inte",
+                "som", "kan", "ska", "vad", "var", "hur", "alla", "era", "ert",
+                "din", "dina", "sin", "sina", "men", "att", "sig", "där", "här",
+                "från", "till", "inom", "utan", "även", "just", "lite", "mer"
+            };
+
+            // Dela upp frågan i ord och filtrera bort korta ord och stoppord
             var keywords = query
                 .ToLowerInvariant()
                 .Split([' ', ',', '.', '?', '!', '-'], StringSplitOptions.RemoveEmptyEntries)
-                .Where(w => w.Length > 2)
+                .Where(w => w.Length > 2 && !stopwords.Contains(w))
                 .ToArray();
 
             if (keywords.Length == 0)
-                return products.Take(maxCount).ToList();
+                return (products.Take(maxCount).ToList(), false);
 
-            // Poängsätt varje produkt baserat på hur många nyckelord som matchar
+            // Poängsätt varje produkt baserat på hur många nyckelord som matchar.
+            // Kontrollerar även omvänt (om ett produktord ingår i sökordet) för att hantera
+            // svenska sammansatta ord, t.ex. "olivoljeprodukter" matchar produkten "olivolja".
+            // Använder sw.Length > 2 (ej > 3) så att t.ex. "ägg" (3 tecken) matchar "äggprodukter".
             var scored = products
                 .Select(p =>
                 {
                     var searchText = $"{p.ProductName} {p.Ingredients} {p.Allergens} {p.Origin}".ToLowerInvariant();
-                    int score = keywords.Count(kw => searchText.Contains(kw));
+                    var searchWords = searchText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    int score = keywords.Count(kw =>
+                        searchText.Contains(kw) ||
+                        searchWords.Any(sw => sw.Length > 2 && kw.StartsWith(sw)));
                     return (Product: p, Score: score);
                 })
                 .Where(x => x.Score > 0)
@@ -166,7 +217,7 @@ VIKTIGA REGLER FÖR DINA SVAR:
                 .ToList();
 
             // Om ingen matchning — returnera de första produkterna som fallback
-            return scored.Any() ? scored : products.Take(maxCount).ToList();
+            return scored.Any() ? (scored, true) : (products.Take(maxCount).ToList(), false);
         }
     }
 }
