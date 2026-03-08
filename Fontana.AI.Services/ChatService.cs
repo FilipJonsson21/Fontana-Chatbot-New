@@ -116,6 +116,7 @@ VIKTIGA REGLER FÖR DINA SVAR:
 3. MEDICINSKA RÅD: Gör aldrig medicinska påståenden. Du får citera näringsvärden men aldrig påstå att något botar sjukdomar.
 4. PRISER: Diskutera aldrig priser. Hänvisa kunden till deras lokala livsmedelsbutik.
 5. KONKURRENTER: Var alltid lojal mot Fontana. Prata aldrig illa om andra varumärken.
+6. SPECIFICERING: Om frågan gäller ingredienser, allergener eller ursprung och flera produkter matchar — svara kort och generellt om det som är gemensamt, nämn 2–3 produktnamn som exempel, och avsluta med att användaren kan specificera sig för mer detaljerad info om en viss produkt.
 """;
 
                 // 6. Bygg meddelandelistan — system + eventuell historik + aktuellt meddelande
