@@ -66,8 +66,10 @@ namespace Fontana.AI.Services
                 {
                     _logger.LogDebug("Produkter hämtades från cache ({Count} st)", products.Count);
                 }
-                // Filtrera produkter baserat på nyckelord i användarens fråga (max 30 st för att hålla nere tokens)
-                var (relevantProducts, hadProductMatches) = FilterRelevantProducts(products, userMessage, maxCount: 30);
+                // Filtrera produkter baserat på nyckelord i frågan + senaste historik,
+                // så att uppföljningsfrågor ("innehåller den gluten?") hittar rätt produkt
+                var filterQuery = BuildFilterQuery(userMessage, history, maxHistoryTurns: 2);
+                var (relevantProducts, hadProductMatches) = FilterRelevantProducts(products, filterQuery, maxCount: 30);
 
                 // Om frågan gäller allergener/ingredienser/glutenfritt och flera specifika produkter matchar,
                 // ställ en följdfråga istället för att gissa — 2–5 träffar är tillräckligt specifikt för att fråga tillbaka
@@ -151,6 +153,22 @@ VIKTIGA REGLER FÖR DINA SVAR:
                 return $"Ett fel uppstod i ChatService: {ex.Message}";
             }
         }
+        // Kombinerar aktuell fråga med de senaste N användarturerna ur historiken.
+        // Gör att uppföljningsfrågor som "innehåller den gluten?" kan hitta rätt produkt
+        // tack vare att t.ex. "olivolja" finns kvar från föregående tur.
+        private static string BuildFilterQuery(string userMessage, IList<ConversationMessage>? history, int maxHistoryTurns)
+        {
+            if (history is null or { Count: 0 })
+                return userMessage;
+
+            var recentUserMessages = history
+                .Where(m => m.Role == "user")
+                .TakeLast(maxHistoryTurns)
+                .Select(m => m.Content);
+
+            return string.Join(" ", recentUserMessages.Append(userMessage));
+        }
+
         // Filtrerar produkter baserat på nyckelord i frågan.
         // Returnerar träfflistan samt en flagga som anger om produkterna matchades via poäng (true)
         // eller om det är en fallback på de första N produkterna (false).
