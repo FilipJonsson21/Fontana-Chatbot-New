@@ -37,15 +37,28 @@ builder.Services.AddHttpClient<DabasClient>();
 // Rate limiting: max 20 anrop per minut per IP-adress på chat-endpointen
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddSlidingWindowLimiter("chat", limiterOptions =>
+    options.AddPolicy("chat", context =>
     {
-        limiterOptions.PermitLimit = 20;
-        limiterOptions.Window = TimeSpan.FromMinutes(1);
-        limiterOptions.SegmentsPerWindow = 4;
-        limiterOptions.QueueLimit = 0;
-        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        // Partitionera per IP-adress så varje klient har sin egen gräns
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetSlidingWindowLimiter(ip, _ => new SlidingWindowRateLimiterOptions
+        {
+            PermitLimit = 20,
+            Window = TimeSpan.FromMinutes(1),
+            SegmentsPerWindow = 4,
+            QueueLimit = 0,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+        });
     });
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    // Returnera JSON-fel vid 429
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsync(
+            "{\"error\":\"För många förfrågningar. Försök igen om en stund.\"}",
+            cancellationToken);
+    };
 });
 
 var app = builder.Build();
