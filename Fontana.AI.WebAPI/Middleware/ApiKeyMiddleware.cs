@@ -9,10 +9,11 @@ public class ApiKeyMiddleware(RequestDelegate next, IConfiguration configuration
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // Låt Scalar och OpenAPI passera utan nyckel (endast tillgängliga i Development)
+        // Låt Scalar, OpenAPI och statiska filer (demo-sidan) passera utan nyckel
         var path = context.Request.Path.Value ?? string.Empty;
         if (path.StartsWith("/scalar", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWith("/openapi", StringComparison.OrdinalIgnoreCase))
+            path.StartsWith("/openapi", StringComparison.OrdinalIgnoreCase) ||
+            !path.StartsWith("/api", StringComparison.OrdinalIgnoreCase))
         {
             await next(context);
             return;
