@@ -3,70 +3,565 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fontana Kundsupport AI</title>
+    <title>Fontana — Grekisk mat & recept</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .chat-container { width: 400px; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; height: 600px; }
-        .header { background-color: #003366; color: white; padding: 20px; text-align: center; font-weight: bold; font-size: 18px; }
-        .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .message { padding: 10px 15px; border-radius: 20px; max-width: 80%; line-height: 1.4; font-size: 14px; }
-        .user { align-self: flex-end; background-color: #003366; color: white; border-bottom-right-radius: 2px; }
-        .bot { align-self: flex-start; background-color: #e9ecef; color: #333; border-bottom-left-radius: 2px; }
-        .input-area { display: flex; border-top: 1px solid #ddd; padding: 10px; background: white; }
-        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
-        button { background-color: #FFCC00; border: none; padding: 10px 20px; margin-left: 10px; border-radius: 20px; cursor: pointer; font-weight: bold; color: #003366; }
-        button:hover { background-color: #e6b800; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: #faf8f5;
+            color: #2c2c2c;
+        }
+
+        /* ── NAVBAR ── */
+        nav {
+            background: #072852;
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+        }
+        nav .logo {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        nav .logo span { color: #c8a96e; }
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 30px;
+        }
+        nav ul li a {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* ── HERO ── */
+        .hero {
+            background: linear-gradient(135deg, #072852 0%, #0a3d6b 60%, #1a5a8a 100%);
+            color: white;
+            padding: 90px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .hero-badge {
+            display: inline-block;
+            background: rgba(200, 169, 110, 0.2);
+            border: 1px solid #c8a96e;
+            color: #c8a96e;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .hero h1 {
+            font-size: 52px;
+            font-weight: normal;
+            margin-bottom: 16px;
+            line-height: 1.2;
+        }
+        .hero h1 em { color: #c8a96e; font-style: normal; }
+        .hero p {
+            font-size: 18px;
+            opacity: 0.8;
+            max-width: 520px;
+            margin: 0 auto 32px;
+            line-height: 1.7;
+        }
+        .hero-btn {
+            background: #c8a96e;
+            color: #072852;
+            border: none;
+            padding: 14px 36px;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* ── FEATURES ── */
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            background: white;
+            border-bottom: 1px solid #e8e2d9;
+        }
+        .feature {
+            flex: 1;
+            max-width: 300px;
+            padding: 40px 30px;
+            text-align: center;
+            border-right: 1px solid #e8e2d9;
+        }
+        .feature:last-child { border-right: none; }
+        .feature-icon { font-size: 36px; margin-bottom: 12px; }
+        .feature h3 { font-size: 16px; color: #072852; margin-bottom: 8px; }
+        .feature p { font-size: 13px; color: #888; line-height: 1.6; }
+
+        /* ── PRODUCTS ── */
+        .section { padding: 70px 40px; max-width: 1100px; margin: 0 auto; }
+        .section-label {
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #c8a96e;
+            margin-bottom: 10px;
+        }
+        .section h2 { font-size: 36px; color: #072852; font-weight: normal; margin-bottom: 40px; }
+        .products {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .product-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        .product-img {
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+        }
+        .product-info { padding: 20px; }
+        .product-info h4 { color: #072852; margin-bottom: 6px; font-size: 16px; }
+        .product-info p { color: #888; font-size: 13px; line-height: 1.5; }
+
+        /* ── CHAT WIDGET ── */
+        #chat-bubble {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            width: 60px;
+            height: 60px;
+            background: #072852;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(7,40,82,0.4);
+            z-index: 1000;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        #chat-bubble:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(7,40,82,0.5); }
+        #chat-bubble svg { width: 28px; height: 28px; fill: white; }
+        #chat-bubble .badge {
+            position: absolute;
+            top: -4px; right: -4px;
+            background: #c8a96e;
+            color: #072852;
+            font-size: 10px;
+            font-weight: bold;
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: sans-serif;
+        }
+
+        #chat-window {
+            position: fixed;
+            bottom: 100px;
+            right: 28px;
+            width: 380px;
+            height: 540px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+            display: none;
+            flex-direction: column;
+            z-index: 999;
+            overflow: hidden;
+            animation: slideUp 0.25s ease;
+        }
+        #chat-window.open { display: flex; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-header {
+            background: #072852;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .chat-avatar {
+            width: 40px; height: 40px;
+            background: #c8a96e;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .chat-header-text { flex: 1; }
+        .chat-header-text h4 { color: white; font-size: 15px; margin-bottom: 2px; }
+        .chat-header-text span { color: rgba(255,255,255,0.6); font-size: 12px; }
+        .online-dot {
+            width: 8px; height: 8px;
+            background: #4caf50;
+            border-radius: 50%;
+            margin-right: 4px;
+            display: inline-block;
+        }
+        .chat-close {
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            font-size: 20px;
+            line-height: 1;
+            padding: 4px;
+        }
+        .chat-close:hover { color: white; }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #faf8f5;
+        }
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+        .msg {
+            max-width: 82%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .msg.bot {
+            align-self: flex-start;
+            background: white;
+            color: #2c2c2c;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .msg.user {
+            align-self: flex-end;
+            background: #072852;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .msg.typing span {
+            display: inline-block;
+            width: 7px; height: 7px;
+            background: #aaa;
+            border-radius: 50%;
+            animation: bounce 1.2s infinite;
+            margin: 0 2px;
+        }
+        .msg.typing span:nth-child(2) { animation-delay: 0.2s; }
+        .msg.typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+
+        .msg-time {
+            font-size: 10px;
+            color: #bbb;
+            font-family: sans-serif;
+            margin-top: 2px;
+            padding: 0 14px;
+        }
+        .msg-time.right { text-align: right; }
+
+        .chat-input-area {
+            padding: 14px 16px;
+            background: white;
+            border-top: 1px solid #ebe8e2;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .chat-input-area input {
+            flex: 1;
+            border: 1px solid #e0dbd2;
+            border-radius: 22px;
+            padding: 10px 16px;
+            font-size: 14px;
+            outline: none;
+            background: #faf8f5;
+            font-family: 'Segoe UI', sans-serif;
+            transition: border-color 0.2s;
+        }
+        .chat-input-area input:focus { border-color: #072852; }
+        .chat-send {
+            width: 42px; height: 42px;
+            background: #072852;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .chat-send:hover { background: #0a3d6b; }
+        .chat-send svg { width: 18px; height: 18px; fill: white; }
+        .chat-send:disabled { background: #ccc; cursor: not-allowed; }
+
+        .chat-footer {
+            text-align: center;
+            padding: 8px;
+            font-size: 10px;
+            color: #bbb;
+            background: white;
+            font-family: sans-serif;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            background: #072852;
+            color: rgba(255,255,255,0.6);
+            text-align: center;
+            padding: 30px;
+            font-size: 13px;
+        }
+        footer strong { color: white; }
     </style>
 </head>
 <body>
-<div class="chat-container">
-    <div class="header">Fontana Kundsupport</div>
-    <div class="messages" id="messages">
-        <div class="message bot">Hej! Jag är Fontanas AI-assistent. Vad kan jag hjälpa dig med idag?</div>
+
+<!-- NAVBAR -->
+<nav>
+    <div class="logo">F<span>o</span>ntana</div>
+    <ul>
+        <li><a href="#">Produkter</a></li>
+        <li><a href="#">Recept</a></li>
+        <li><a href="#">Om oss</a></li>
+        <li><a href="#">Kontakt</a></li>
+    </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+    <div class="hero-badge">Grekisk & Cypriotisk mat sedan generationer</div>
+    <h1>Smaker från<br><em>Medelhavet</em></h1>
+    <p>Vi delar matglädje med inspiration och passion från det generösa grekiska köket.</p>
+    <button class="hero-btn">Utforska våra produkter</button>
+</div>
+
+<!-- FEATURES -->
+<div class="features">
+    <div class="feature">
+        <div class="feature-icon">🫒</div>
+        <h3>Äkta råvaror</h3>
+        <p>Noggrant utvalda ingredienser direkt från Medelhavsregionen.</p>
     </div>
-    <div class="input-area">
-        <input type="text" id="userInput" placeholder="Skriv din fråga här..." onkeypress="handleEnter(event)">
-        <button onclick="sendMessage()">Skicka</button>
+    <div class="feature">
+        <div class="feature-icon">👨‍👩‍👧</div>
+        <h3>Familjeföretag</h3>
+        <p>Grundat med kärlek och stolthet av en grekisk-cypriotisk familj.</p>
+    </div>
+    <div class="feature">
+        <div class="feature-icon">🌿</div>
+        <h3>Naturliga produkter</h3>
+        <p>Inga onödiga tillsatser — bara ren, äkta smak.</p>
     </div>
 </div>
+
+<!-- PRODUCTS -->
+<div class="section">
+    <div class="section-label">Våra produkter</div>
+    <h2>Populära kategorier</h2>
+    <div class="products">
+        <div class="product-card">
+            <div class="product-img" style="background:#f0f7e8;">🫒</div>
+            <div class="product-info">
+                <h4>Olivoljor</h4>
+                <p>Extra virgin olivoljor pressade av de finaste oliverna från Grekland.</p>
+            </div>
+        </div>
+        <div class="product-card">
+            <div class="product-img" style="background:#fff8e8;">🧀</div>
+            <div class="product-info">
+                <h4>Ostar</h4>
+                <p>Äkta fetaost och halloumi med traditionella recept från Cypern.</p>
+            </div>
+        </div>
+        <div class="product-card">
+            <div class="product-img" style="background:#fef0f0;">🌶️</div>
+            <div class="product-info">
+                <h4>Dips & Tillbehör</h4>
+                <p>Hummus, tapenade och tzatziki — perfekta till varje bord.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <strong>Fontana</strong> — Grekisk mat & recept på god medelhavskost<br>
+    <small>© 2025 Fontana. Alla rättigheter förbehållna.</small>
+</footer>
+
+<!-- CHAT BUBBLE -->
+<div id="chat-bubble" onclick="toggleChat()">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+    </svg>
+    <div class="badge">AI</div>
+</div>
+
+<!-- CHAT WINDOW -->
+<div id="chat-window">
+    <div class="chat-header">
+        <div class="chat-avatar">🫒</div>
+        <div class="chat-header-text">
+            <h4>Fontana AI-assistent</h4>
+            <span><span class="online-dot"></span>Online nu</span>
+        </div>
+        <span class="chat-close" onclick="toggleChat()">✕</span>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+        <div class="msg bot">Hej och välkommen till Fontana! 👋 Jag är er AI-assistent och hjälper dig med frågor om våra produkter. Vad kan jag hjälpa dig med?</div>
+        <div class="msg-time">Nu</div>
+    </div>
+
+    <div class="chat-input-area">
+        <input type="text" id="chat-input" placeholder="Skriv din fråga..." onkeydown="handleKey(event)">
+        <button class="chat-send" id="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+        </button>
+    </div>
+    <div class="chat-footer">Fontana AI · Drivs av GPT-4o</div>
+</div>
+
 <script>
+    // ── Byt ut mot din faktiska API-nyckel vid driftsättning ──
+    const API_KEY = 'dev-test-key';
     const history = [];
 
-    async function sendMessage() {
-        const input = document.getElementById('userInput');
-        const text = input.value.trim();
-        const messagesDiv = document.getElementById('messages');
-        if (!text) return;
-
-        messagesDiv.innerHTML += `<div class="message user">${text}</div>`;
-        input.value = '';
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-        history.push({ role: 'user', content: text });
-
-        try {
-            const response = await fetch('/api/chat/ask', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text, history: history })
-            });
-
-            if (!response.ok) throw new Error('Servern svarade med fel: ' + response.status);
-
-            const data = await response.json();
-            history.push({ role: 'assistant', content: data.answer });
-
-            messagesDiv.innerHTML += `<div class="message bot">${data.answer}</div>`;
-        } catch (error) {
-            messagesDiv.innerHTML += `<div class="message bot" style="color:red;">Kunde inte ansluta till AI:n. Är servern igång?</div>`;
-            console.error(error);
+    function toggleChat() {
+        const win = document.getElementById('chat-window');
+        win.classList.toggle('open');
+        if (win.classList.contains('open')) {
+            document.getElementById('chat-input').focus();
         }
-
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
-    function handleEnter(e) {
-        if (e.key === 'Enter') sendMessage();
+    function handleKey(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    }
+
+    function now() {
+        return new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function appendMessage(text, role) {
+        const container = document.getElementById('chat-messages');
+        const msg = document.createElement('div');
+        msg.className = `msg ${role}`;
+        // Konvertera radbrytningar till <br>
+        msg.innerHTML = text.replace(/\n/g, '<br>');
+        container.appendChild(msg);
+
+        const time = document.createElement('div');
+        time.className = `msg-time ${role === 'user' ? 'right' : ''}`;
+        time.textContent = now();
+        container.appendChild(time);
+
+        container.scrollTop = container.scrollHeight;
+        return msg;
+    }
+
+    function showTyping() {
+        const container = document.getElementById('chat-messages');
+        const el = document.createElement('div');
+        el.className = 'msg bot typing';
+        el.id = 'typing-indicator';
+        el.innerHTML = '<span></span><span></span><span></span>';
+        container.appendChild(el);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function hideTyping() {
+        const el = document.getElementById('typing-indicator');
+        if (el) el.remove();
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const text = input.value.trim();
+        if (!text) return;
+
+        input.value = '';
+        sendBtn.disabled = true;
+        appendMessage(text, 'user');
+        history.push({ role: 'user', content: text });
+        showTyping();
+
+        try {
+            const res = await fetch('/api/chat/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Api-Key': API_KEY
+                },
+                body: JSON.stringify({ message: text, history })
+            });
+
+            hideTyping();
+
+            if (res.status === 429) {
+                appendMessage('Du har skickat för många meddelanden. Vänta en stund och försök igen.', 'bot');
+                return;
+            }
+            if (!res.ok) throw new Error(res.status);
+
+            const data = await res.json();
+            appendMessage(data.answer, 'bot');
+            history.push({ role: 'assistant', content: data.answer });
+
+        } catch (err) {
+            hideTyping();
+            appendMessage('Något gick fel. Kontrollera att servern körs och försök igen.', 'bot');
+            console.error(err);
+        } finally {
+            sendBtn.disabled = false;
+            input.focus();
+        }
     }
 </script>
 </body>
