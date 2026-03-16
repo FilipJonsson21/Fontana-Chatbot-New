@@ -1,5 +1,6 @@
 using Fontana.AI.Data;
 using Fontana.AI.Services;
+using Fontana.AI.WebAPI.Middleware;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
@@ -58,6 +59,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+app.UseMiddleware<ApiKeyMiddleware>();
 app.UseRateLimiter();
 app.UseDefaultFiles();
 app.UseStaticFiles();
