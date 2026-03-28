@@ -66,8 +66,7 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
-// Skapa och migrera databasen automatiskt vid uppstart (Development)
-if (app.Environment.IsDevelopment())
+// Skapa och migrera databasen automatiskt vid uppstart
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
