@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Fontana.AI.Data;
 using Fontana.AI.Models;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,9 @@ namespace Fontana.AI.Services
         private const string ProductCacheKey = "dabas_products";
         private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
 
+        // Max antal historikmeddelanden som skickas till OpenAI per anrop (håller token-kostnaden i schack)
+        private const int MaxHistoryMessages = 10;
+
         public ChatService(ApplicationDbContext context, IConfiguration configuration, ILogger<ChatService> logger, IMemoryCache cache)
         {
             _context = context;
@@ -29,17 +33,18 @@ namespace Fontana.AI.Services
             _apiKey = configuration["OpenAI:ApiKey"] ?? "";
         }
 
-        public async Task<string> GetAiResponseAsync(string userMessage, IList<ConversationMessage>? history = null)
+        public async Task<ChatResponse> GetAiResponseAsync(string userMessage, IList<ConversationMessage>? history = null)
         {
             var historyLength = history?.Count ?? 0;
             _logger.LogInformation("ChatService anropas. Historiklängd: {HistoryLength}", historyLength);
+            var stopwatch = Stopwatch.StartNew();
             try
             {
                 // 1. Kontrollera API-nyckel
                 if (string.IsNullOrEmpty(_apiKey) || _apiKey.StartsWith("sk-..."))
                 {
                     _logger.LogError("OpenAI API-nyckel saknas eller är ogiltig");
-                    return "Fel: API-nyckeln saknas eller är inte korrekt inlagd i appsettings.json.";
+                    return new ChatResponse("Fel: API-nyckeln saknas eller är inte korrekt inlagd i appsettings.json.", 0);
                 }
 
                 // 2. Hämta FAQ från cache eller databas
@@ -82,7 +87,9 @@ namespace Fontana.AI.Services
                         ? $"{names[0]} eller {names[1]}"
                         : string.Join(", ", names[..^1]) + $" eller {names[^1]}";
                     _logger.LogInformation("Klarifieringsfråga ställs — {Count} produkter matchade", names.Count);
-                    return $"Det finns flera produkter som matchar din fråga – vilken menar du? {lista}?";
+                    var clarificationAnswer = $"Det finns flera produkter som matchar din fråga – vilken menar du? {lista}?";
+                    var clarificationLogId = await SaveConversationLogAsync(userMessage, clarificationAnswer, null, stopwatch.ElapsedMilliseconds);
+                    return new ChatResponse(clarificationAnswer, clarificationLogId);
                 }
 
                 string dabasProductInfo = relevantProducts.Any()
@@ -98,7 +105,7 @@ namespace Fontana.AI.Services
                 // 5. Definiera systemets personlighet och viktiga regler
                 string systemInstruction =
 $"""
-Du är Fontanas passionerade och hjälpsamma AI-assistent.
+Du är Frixos — Fontanas passionerade och hjälpsamma AI-assistent.
 Du representerar ett familjeföretag med rötter i Grekland och Cypern. Svara varmt och välkomnande.
 
 Här är din kunskapsbas:
@@ -131,10 +138,11 @@ VIKTIGA REGLER FÖR DINA SVAR:
                     new SystemChatMessage(systemInstruction)
                 };
 
-                // Lägg till konversationshistorik om den finns
+                // Lägg till konversationshistorik — begränsad till de senaste MaxHistoryMessages
+                // för att hålla token-kostnaden konstant oavsett hur lång chatten är
                 if (history is { Count: > 0 })
                 {
-                    foreach (var entry in history)
+                    foreach (var entry in history.TakeLast(MaxHistoryMessages))
                     {
                         if (entry.Role == "user")
                             messages.Add(new UserChatMessage(entry.Content));
@@ -149,15 +157,41 @@ VIKTIGA REGLER FÖR DINA SVAR:
                 // 7. Skicka anropet till OpenAI
                 _logger.LogInformation("Skickar {MessageCount} meddelanden till OpenAI GPT-4o", messages.Count);
                 ChatCompletion completion = await client.CompleteChatAsync(messages);
-                _logger.LogInformation("Svar mottaget från OpenAI. Tokens: {Tokens}", completion.Usage?.TotalTokenCount ?? 0);
+                stopwatch.Stop();
+                var tokens = completion.Usage?.TotalTokenCount;
+                _logger.LogInformation("Svar mottaget från OpenAI. Tokens: {Tokens}, Tid: {Ms}ms", tokens ?? 0, stopwatch.ElapsedMilliseconds);
 
-                return completion.Content[0].Text;
+                var answer = completion.Content[0].Text;
+                var logId = await SaveConversationLogAsync(userMessage, answer, tokens, stopwatch.ElapsedMilliseconds);
+                return new ChatResponse(answer, logId);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Fel vid anrop till OpenAI");
-                // Returnerar felet så det syns i gränssnittet under utveckling
-                return $"Ett fel uppstod i ChatService: {ex.Message}";
+                return new ChatResponse($"Ett fel uppstod i ChatService: {ex.Message}", 0);
+            }
+        }
+
+        private async Task<int> SaveConversationLogAsync(string userMessage, string botResponse, int? tokensUsed, long responseTimeMs)
+        {
+            try
+            {
+                var log = new ConversationLog
+                {
+                    UserMessage = userMessage,
+                    BotResponse = botResponse,
+                    Timestamp = DateTime.UtcNow,
+                    TokensUsed = tokensUsed,
+                    ResponseTimeMs = responseTimeMs
+                };
+                _context.ConversationLogs.Add(log);
+                await _context.SaveChangesAsync();
+                return log.Id;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Kunde inte spara konversationslogg");
+                return 0;
             }
         }
         // Kombinerar aktuell fråga med de senaste N användarturerna ur historiken.

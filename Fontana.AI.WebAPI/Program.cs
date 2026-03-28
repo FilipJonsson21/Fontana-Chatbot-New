@@ -8,13 +8,15 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Tillåtna origins läses från konfiguration — sätt "AllowedOrigins" i appsettings
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin() // Till�ter alla k�llor (bra f�r utveckling)
-              .AllowAnyMethod() // Till�ter POST, GET etc.
-              .AllowAnyHeader(); // Till�ter alla headers
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
 
@@ -33,6 +35,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddHttpClient<DabasClient>();
+builder.Services.AddHostedService<Fontana.AI.WebAPI.Services.DabasSyncBackgroundService>();
 
 // Rate limiting: max 20 anrop per minut per IP-adress på chat-endpointen
 builder.Services.AddRateLimiter(options =>
@@ -71,8 +74,10 @@ if (app.Environment.IsDevelopment())
     db.Database.Migrate();
 }
 
+app.UseHttpsRedirection();
 app.UseCors();
 app.UseMiddleware<ApiKeyMiddleware>();
+app.UseMiddleware<AdminAuthMiddleware>();
 app.UseRateLimiter();
 app.UseDefaultFiles();
 app.UseStaticFiles();
@@ -84,10 +89,9 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference(); // Denna kopplar ihop Scalar med OpenAPI
 }
 
-app.UseHttpsRedirection();
-
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
+

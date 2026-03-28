@@ -73,17 +73,20 @@ namespace Fontana.AI.Services
                     return [];
                 }
 
-                _logger.LogInformation("DABAS listade {Count} produkter för GLN {Gln} — hämtar detaljer", listItems.Count, supplierGln);
+                _logger.LogInformation("DABAS listade {Count} produkter för GLN {Gln} — hämtar detaljer parallellt", listItems.Count, supplierGln);
 
-                // Steg 2: hämta detaljer per GTIN
-                var products = new List<DabasProduct>(listItems.Count);
-                foreach (var item in listItems)
-                {
-                    if (string.IsNullOrEmpty(item.Gtin)) continue;
-
-                    var product = await FetchDetailAsync(item);
-                    products.Add(product);
-                }
+                // Steg 2: hämta detaljer parallellt — max 5 samtidiga anrop för att inte överbelasta DABAS API
+                const int MaxConcurrency = 5;
+                using var semaphore = new SemaphoreSlim(MaxConcurrency);
+                var tasks = listItems
+                    .Where(item => !string.IsNullOrEmpty(item.Gtin))
+                    .Select(async item =>
+                    {
+                        await semaphore.WaitAsync();
+                        try { return await FetchDetailAsync(item); }
+                        finally { semaphore.Release(); }
+                    });
+                var products = (await Task.WhenAll(tasks)).ToList();
 
                 _logger.LogInformation("Sync klar — {Count} produkter hämtade med detaljer", products.Count);
                 return products;

@@ -19,6 +19,23 @@ public class ApiKeyMiddleware(RequestDelegate next, IConfiguration configuration
             return;
         }
 
+        // Tillåt anrop från betrodda origins — samma server ELLER konfigurerade externa domäner
+        // Browsern sätter Origin/Referer automatiskt och kan inte fejkas cross-origin
+        var serverBase     = $"{context.Request.Scheme}://{context.Request.Host}";
+        var allowedOrigins = configuration.GetSection("AllowedOrigins").Get<string[]>() ?? [];
+        var origin  = context.Request.Headers["Origin"].FirstOrDefault()  ?? string.Empty;
+        var referer = context.Request.Headers["Referer"].FirstOrDefault() ?? string.Empty;
+
+        bool isTrusted = origin.StartsWith(serverBase, StringComparison.OrdinalIgnoreCase)
+                      || referer.StartsWith(serverBase, StringComparison.OrdinalIgnoreCase)
+                      || allowedOrigins.Any(o => origin.StartsWith(o, StringComparison.OrdinalIgnoreCase));
+
+        if (isTrusted)
+        {
+            await next(context);
+            return;
+        }
+
         var configuredKey = configuration["ApiKey"];
 
         if (!context.Request.Headers.TryGetValue(ApiKeyHeader, out var providedKey) ||

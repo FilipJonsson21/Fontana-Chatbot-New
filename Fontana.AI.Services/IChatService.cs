@@ -4,6 +4,6 @@ namespace Fontana.AI.Services
 {
     public interface IChatService
     {
-        Task<string> GetAiResponseAsync(string userMessage, IList<ConversationMessage>? history = null);
+        Task<ChatResponse> GetAiResponseAsync(string userMessage, IList<ConversationMessage>? history = null);
     }
 }

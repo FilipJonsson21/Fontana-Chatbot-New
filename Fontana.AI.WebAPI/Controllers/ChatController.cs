@@ -26,7 +26,7 @@ namespace Fontana.AI.WebAPI.Controllers
                 return BadRequest(ModelState);
 
             var response = await _chatService.GetAiResponseAsync(request.Message, request.History);
-            return Ok(new { answer = response });
+            return Ok(new { answer = response.Answer, logId = response.LogId });
         }
     }
 }

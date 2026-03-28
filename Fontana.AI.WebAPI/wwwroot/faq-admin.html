@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ-hantering — Fontana Admin</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #faf8f5;
+            color: #2c2c2c;
+            min-height: 100vh;
+        }
+
+        /* ── HEADER ── */
+        header {
+            background: #072852;
+            padding: 0 40px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        header .logo {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        header .logo span { color: #c8a96e; }
+        header .badge {
+            background: rgba(200,169,110,0.2);
+            border: 1px solid #c8a96e;
+            color: #c8a96e;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        /* ── LAYOUT ── */
+        main {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        h1 {
+            font-size: 26px;
+            color: #072852;
+            font-weight: normal;
+            margin-bottom: 6px;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+
+        /* ── TOAST ── */
+        #toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+            pointer-events: none;
+        }
+        #toast.show { opacity: 1; }
+        #toast.success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        #toast.error   { background: #fdecea; color: #c62828; border: 1px solid #ffcdd2; }
+
+        /* ── STATS ── */
+        .stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 16px 24px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+            min-width: 120px;
+        }
+        .stat-card .num { font-size: 28px; color: #072852; font-weight: bold; }
+        .stat-card .lbl { font-size: 12px; color: #888; margin-top: 2px; }
+
+        /* ── FILTER ── */
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .toolbar input {
+            flex: 1;
+            min-width: 200px;
+            border: 1px solid #e0dbd2;
+            border-radius: 8px;
+            padding: 9px 14px;
+            font-size: 14px;
+            background: white;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .toolbar input:focus { border-color: #072852; }
+        .toolbar select {
+            border: 1px solid #e0dbd2;
+            border-radius: 8px;
+            padding: 9px 14px;
+            font-size: 14px;
+            background: white;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* ── TABLE ── */
+        .table-wrap {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead {
+            background: #072852;
+            color: white;
+        }
+        thead th {
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        tbody tr {
+            border-bottom: 1px solid #f0ece5;
+            transition: background 0.15s;
+        }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #fdf9f4; }
+        tbody tr.editing { background: #fffbf4; }
+        td {
+            padding: 14px 16px;
+            font-size: 14px;
+            vertical-align: top;
+        }
+        td.id-col { color: #aaa; font-size: 12px; width: 48px; }
+        td.cat-col { width: 130px; }
+        td.actions-col { width: 100px; text-align: right; white-space: nowrap; }
+
+        .category-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #eef2ff;
+            color: #3730a3;
+        }
+
+        /* Redigeringsfält i tabellen */
+        td textarea, td input[type="text"] {
+            width: 100%;
+            border: 1px solid #c8a96e;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 14px;
+            font-family: inherit;
+            background: #fffef9;
+            outline: none;
+            resize: vertical;
+        }
+        td textarea { min-height: 60px; }
+
+        /* ── KNAPPAR ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 7px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.15s, transform 0.1s;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary   { background: #072852; color: white; }
+        .btn-success   { background: #2e7d32; color: white; }
+        .btn-danger    { background: #fdecea; color: #c62828; }
+        .btn-secondary { background: #f0ece5; color: #555; }
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: background 0.15s;
+        }
+        .btn-icon:hover { background: #f0ece5; }
+
+        /* ── LÄGG TILL FORMULÄR ── */
+        .add-form {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+            padding: 28px;
+        }
+        .add-form h2 {
+            font-size: 17px;
+            color: #072852;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group label { font-size: 12px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            border: 1px solid #e0dbd2;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: inherit;
+            background: #faf8f5;
+            outline: none;
+            transition: border-color 0.2s;
+            resize: vertical;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus { border-color: #072852; background: white; }
+        .form-group textarea { min-height: 90px; }
+        .form-actions { margin-top: 20px; display: flex; gap: 10px; }
+
+        #empty-state {
+            text-align: center;
+            padding: 48px;
+            color: #aaa;
+            font-size: 15px;
+        }
+
+        @media (max-width: 600px) {
+            main { padding: 20px 12px; }
+            .form-grid { grid-template-columns: 1fr; }
+            thead th:nth-child(3) { display: none; }
+            td.cat-col { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">F<span>o</span>ntana <span style="color:rgba(255,255,255,0.4);font-weight:normal;font-size:14px;margin-left:8px;">/ Admin</span></div>
+    <nav style="display:flex;gap:0;">
+        <a href="/faq-admin.html" style="color:white;text-decoration:none;font-size:13px;margin-right:24px;text-transform:uppercase;letter-spacing:0.5px;">FAQ</a>
+        <a href="/conversations.html" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">Historik</a>
+    </nav>
+    <div class="badge">FAQ-hantering</div>
+    <button onclick="logout()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);color:white;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:16px;">Logga ut</button>
+</header>
+
+<main>
+    <h1>FAQ-hantering</h1>
+    <p class="subtitle">Lägg till, redigera och ta bort frågor och svar som Frixos använder.</p>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="num" id="stat-total">—</div>
+            <div class="lbl">Totalt antal FAQ</div>
+        </div>
+        <div class="stat-card">
+            <div class="num" id="stat-categories">—</div>
+            <div class="lbl">Kategorier</div>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <input type="text" id="search" placeholder="Sök fråga eller svar…" oninput="renderTable()">
+        <select id="filter-category" onchange="renderTable()">
+            <option value="">Alla kategorier</option>
+        </select>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Fråga & Svar</th>
+                    <th>Kategori</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="faq-tbody">
+                <tr><td colspan="4" id="empty-state">Laddar…</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="add-form">
+        <h2>+ Lägg till ny FAQ</h2>
+        <div class="form-grid">
+            <div class="form-group full">
+                <label>Fråga</label>
+                <input type="text" id="new-question" placeholder="Skriv frågan här…">
+            </div>
+            <div class="form-group full">
+                <label>Svar</label>
+                <textarea id="new-answer" placeholder="Skriv svaret här…"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Kategori</label>
+                <input type="text" id="new-category" placeholder="t.ex. Allergener, Produkter…" list="category-list">
+                <datalist id="category-list"></datalist>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-primary" onclick="createFaq()">Spara FAQ</button>
+            <button class="btn btn-secondary" onclick="clearForm()">Rensa</button>
+        </div>
+    </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+    let allFaqs = [];
+    let editingId = null;
+
+    // ── Datahämtning ──
+    async function loadFaqs() {
+        try {
+            const res = await fetch('/api/faq');
+            if (!res.ok) throw new Error(res.status);
+            allFaqs = await res.json();
+            updateStats();
+            updateCategoryFilter();
+            renderTable();
+        } catch {
+            showToast('Kunde inte ladda FAQ-listan. Kontrollera att servern körs.', 'error');
+            document.getElementById('faq-tbody').innerHTML =
+                '<tr><td colspan="4" id="empty-state">Kunde inte ladda data.</td></tr>';
+        }
+    }
+
+    // ── Statistik ──
+    function updateStats() {
+        document.getElementById('stat-total').textContent = allFaqs.length;
+        const cats = new Set(allFaqs.map(f => f.category).filter(Boolean));
+        document.getElementById('stat-categories').textContent = cats.size;
+    }
+
+    // ── Kategorifilter ──
+    function updateCategoryFilter() {
+        const cats = [...new Set(allFaqs.map(f => f.category).filter(Boolean))].sort();
+        const sel = document.getElementById('filter-category');
+        const current = sel.value;
+        sel.innerHTML = '<option value="">Alla kategorier</option>' +
+            cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+        sel.value = current;
+
+        // Uppdatera datalist för formuläret
+        document.getElementById('category-list').innerHTML =
+            cats.map(c => `<option value="${esc(c)}">`).join('');
+    }
+
+    // ── Rendera tabell ──
+    function renderTable() {
+        const search = document.getElementById('search').value.toLowerCase();
+        const catFilter = document.getElementById('filter-category').value;
+
+        const filtered = allFaqs.filter(f => {
+            const matchSearch = !search ||
+                f.question?.toLowerCase().includes(search) ||
+                f.answer?.toLowerCase().includes(search);
+            const matchCat = !catFilter || f.category === catFilter;
+            return matchSearch && matchCat;
+        });
+
+        const tbody = document.getElementById('faq-tbody');
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" id="empty-state">Inga FAQ hittades.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(f => {
+            if (f.id === editingId) return renderEditRow(f);
+            return renderViewRow(f);
+        }).join('');
+    }
+
+    function renderViewRow(f) {
+        return `
+        <tr data-id="${f.id}">
+            <td class="id-col">#${f.id}</td>
+            <td>
+                <div style="font-weight:500;margin-bottom:4px;">${esc(f.question)}</div>
+                <div style="color:#666;font-size:13px;line-height:1.5;">${esc(f.answer)}</div>
+            </td>
+            <td class="cat-col">
+                ${f.category ? `<span class="category-badge">${esc(f.category)}</span>` : '<span style="color:#ccc">—</span>'}
+            </td>
+            <td class="actions-col">
+                <button class="btn-icon" title="Redigera" onclick="startEdit(${f.id})">✏️</button>
+                <button class="btn-icon" title="Ta bort" onclick="deleteFaq(${f.id})">🗑️</button>
+            </td>
+        </tr>`;
+    }
+
+    function renderEditRow(f) {
+        return `
+        <tr class="editing" data-id="${f.id}">
+            <td class="id-col">#${f.id}</td>
+            <td>
+                <input type="text" id="edit-question" value="${esc(f.question)}" placeholder="Fråga" style="margin-bottom:8px;">
+                <textarea id="edit-answer" placeholder="Svar">${esc(f.answer)}</textarea>
+            </td>
+            <td class="cat-col">
+                <input type="text" id="edit-category" value="${esc(f.category ?? '')}" placeholder="Kategori" list="category-list">
+            </td>
+            <td class="actions-col">
+                <button class="btn-icon" title="Spara" onclick="saveEdit(${f.id})">💾</button>
+                <button class="btn-icon" title="Avbryt" onclick="cancelEdit()">✕</button>
+            </td>
+        </tr>`;
+    }
+
+    // ── Redigering ──
+    function startEdit(id) {
+        editingId = id;
+        renderTable();
+        document.getElementById('edit-question')?.focus();
+    }
+
+    function cancelEdit() {
+        editingId = null;
+        renderTable();
+    }
+
+    async function saveEdit(id) {
+        const question = document.getElementById('edit-question').value.trim();
+        const answer   = document.getElementById('edit-answer').value.trim();
+        const category = document.getElementById('edit-category').value.trim();
+
+        if (!question || !answer) {
+            showToast('Fråga och svar får inte vara tomma.', 'error');
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/faq/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, answer, category })
+            });
+            if (!res.ok) throw new Error(res.status);
+            const updated = await res.json();
+            allFaqs = allFaqs.map(f => f.id === id ? updated : f);
+            editingId = null;
+            updateStats();
+            updateCategoryFilter();
+            renderTable();
+            showToast('FAQ uppdaterad!', 'success');
+        } catch {
+            showToast('Kunde inte spara ändringarna.', 'error');
+        }
+    }
+
+    // ── Skapa ──
+    async function createFaq() {
+        const question = document.getElementById('new-question').value.trim();
+        const answer   = document.getElementById('new-answer').value.trim();
+        const category = document.getElementById('new-category').value.trim();
+
+        if (!question || !answer) {
+            showToast('Fråga och svar är obligatoriska.', 'error');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/faq', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, answer, category })
+            });
+            if (!res.ok) throw new Error(res.status);
+            const created = await res.json();
+            allFaqs.push(created);
+            clearForm();
+            updateStats();
+            updateCategoryFilter();
+            renderTable();
+            showToast('Ny FAQ skapad!', 'success');
+        } catch {
+            showToast('Kunde inte skapa FAQ.', 'error');
+        }
+    }
+
+    function clearForm() {
+        document.getElementById('new-question').value = '';
+        document.getElementById('new-answer').value = '';
+        document.getElementById('new-category').value = '';
+    }
+
+    // ── Ta bort ──
+    async function deleteFaq(id) {
+        const faq = allFaqs.find(f => f.id === id);
+        if (!confirm(`Ta bort FAQ:\n"${faq?.question}"\n\nDetta går inte att ångra.`)) return;
+
+        try {
+            const res = await fetch(`/api/faq/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(res.status);
+            allFaqs = allFaqs.filter(f => f.id !== id);
+            if (editingId === id) editingId = null;
+            updateStats();
+            updateCategoryFilter();
+            renderTable();
+            showToast('FAQ borttagen.', 'success');
+        } catch {
+            showToast('Kunde inte ta bort FAQ.', 'error');
+        }
+    }
+
+    // ── Toast ──
+    function showToast(message, type = 'success') {
+        const el = document.getElementById('toast');
+        el.textContent = message;
+        el.className = `show ${type}`;
+        clearTimeout(el._timeout);
+        el._timeout = setTimeout(() => el.className = '', 3000);
+    }
+
+    // ── XSS-skydd ──
+    function esc(str) {
+        return String(str ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    async function logout() {
+        await fetch('/api/admin/logout', { method: 'POST' });
+        window.location.href = '/admin-login.html';
+    }
+
+    loadFaqs();
+</script>
+</body>
+</html>

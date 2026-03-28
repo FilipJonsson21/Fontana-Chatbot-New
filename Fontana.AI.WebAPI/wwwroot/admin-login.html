@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — Fontana</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #faf8f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.1);
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 380px;
+        }
+        .logo {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #072852;
+            margin-bottom: 8px;
+        }
+        .logo span { color: #c8a96e; }
+        .subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 36px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        input[type="password"] {
+            width: 100%;
+            border: 1px solid #e0dbd2;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 15px;
+            outline: none;
+            background: #faf8f5;
+            transition: border-color 0.2s;
+            margin-bottom: 20px;
+        }
+        input[type="password"]:focus { border-color: #072852; background: white; }
+        button {
+            width: 100%;
+            background: #072852;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #0a3d6b; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .error {
+            background: #fdecea;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .error.show { display: block; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">F<span>o</span>ntana</div>
+    <div class="subtitle">Admin</div>
+
+    <div class="error" id="error-msg">Fel lösenord. Försök igen.</div>
+
+    <form id="login-form">
+        <label for="password">Lösenord</label>
+        <input type="password" id="password" autocomplete="current-password"
+               placeholder="••••••••" autofocus>
+        <button type="submit" id="submit-btn">Logga in</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('login-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const password  = document.getElementById('password').value;
+        const submitBtn = document.getElementById('submit-btn');
+        const errorMsg  = document.getElementById('error-msg');
+
+        submitBtn.disabled   = true;
+        submitBtn.textContent = 'Loggar in…';
+        errorMsg.classList.remove('show');
+
+        try {
+            const res = await fetch('/api/admin/login', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ password })
+            });
+
+            if (res.ok) {
+                // Skicka till FAQ-sidan efter inloggning
+                window.location.href = '/faq-admin.html';
+            } else {
+                errorMsg.classList.add('show');
+                document.getElementById('password').value = '';
+                document.getElementById('password').focus();
+            }
+        } catch {
+            errorMsg.textContent = 'Kunde inte nå servern. Kontrollera att den körs.';
+            errorMsg.classList.add('show');
+        } finally {
+            submitBtn.disabled    = false;
+            submitBtn.textContent = 'Logga in';
+        }
+    });
+</script>
+</body>
+</html>

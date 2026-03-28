@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konversationshistorik — Fontana Admin</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #faf8f5; color: #2c2c2c; min-height: 100vh; }
+
+        header {
+            background: #072852; padding: 0 40px; height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        header .logo { color: white; font-size: 20px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
+        header .logo span { color: #c8a96e; }
+        header .badge {
+            background: rgba(200,169,110,0.2); border: 1px solid #c8a96e; color: #c8a96e;
+            font-size: 11px; letter-spacing: 1px; text-transform: uppercase; padding: 4px 12px; border-radius: 20px;
+        }
+        header nav a {
+            color: rgba(255,255,255,0.7); text-decoration: none; font-size: 13px;
+            margin-left: 24px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        header nav a:hover { color: white; }
+
+        main { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+        h1 { font-size: 26px; color: #072852; font-weight: normal; margin-bottom: 6px; }
+        .subtitle { color: #888; font-size: 14px; margin-bottom: 32px; }
+
+        /* Stats */
+        .stats { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+        .stat-card {
+            background: white; border-radius: 10px; padding: 16px 24px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06); min-width: 140px;
+        }
+        .stat-card .num { font-size: 28px; color: #072852; font-weight: bold; }
+        .stat-card .lbl { font-size: 12px; color: #888; margin-top: 2px; }
+
+        /* Tabell */
+        .table-wrap {
+            background: white; border-radius: 12px;
+            box-shadow: 0 1px 8px rgba(0,0,0,0.07); overflow: hidden;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #072852; color: white; }
+        thead th { padding: 14px 16px; text-align: left; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+        tbody tr { border-bottom: 1px solid #f0ece5; transition: background 0.15s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #fdf9f4; cursor: pointer; }
+        td { padding: 12px 16px; font-size: 14px; vertical-align: top; }
+        td.time-col { white-space: nowrap; color: #888; font-size: 12px; width: 130px; }
+        td.meta-col { width: 120px; color: #888; font-size: 12px; }
+        td.fb-col { width: 60px; text-align: center; font-size: 16px; }
+        .msg-preview { color: #555; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ans-preview { color: #888; font-size: 13px; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Paginering */
+        .pagination { display: flex; justify-content: center; gap: 8px; padding: 20px; }
+        .page-btn {
+            border: 1px solid #e0dbd2; background: white; border-radius: 7px;
+            padding: 7px 14px; font-size: 13px; cursor: pointer; transition: all 0.15s;
+        }
+        .page-btn:hover { border-color: #072852; color: #072852; }
+        .page-btn.active { background: #072852; color: white; border-color: #072852; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: white; border-radius: 14px; padding: 32px;
+            max-width: 620px; width: 90%; max-height: 80vh; overflow-y: auto;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+        }
+        .modal h3 { font-size: 16px; color: #072852; margin-bottom: 16px; }
+        .modal-label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 6px; }
+        .modal-text { background: #faf8f5; border-radius: 8px; padding: 12px 16px; font-size: 14px; line-height: 1.6; color: #2c2c2c; }
+        .modal-meta { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 16px; }
+        .modal-meta span { font-size: 12px; color: #888; }
+        .modal-meta strong { color: #072852; }
+        .modal-close { float: right; background: none; border: none; font-size: 20px; cursor: pointer; color: #aaa; }
+        .modal-close:hover { color: #333; }
+
+        #empty-state { text-align: center; padding: 48px; color: #aaa; font-size: 15px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">F<span>o</span>ntana <span style="color:rgba(255,255,255,0.4);font-weight:normal;font-size:14px;margin-left:8px;">/ Admin</span></div>
+    <nav>
+        <a href="/faq-admin.html">FAQ</a>
+        <a href="/conversations.html" style="color:white;">Historik</a>
+    </nav>
+    <div class="badge">Konversationshistorik</div>
+    <button onclick="logout()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);color:white;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:16px;">Logga ut</button>
+</header>
+
+<main>
+    <h1>Konversationshistorik</h1>
+    <p class="subtitle">Alla konversationer med Frixos — klicka på en rad för att se hela svaret.</p>
+
+    <div class="stats">
+        <div class="stat-card"><div class="num" id="stat-total">—</div><div class="lbl">Totalt</div></div>
+        <div class="stat-card"><div class="num" id="stat-up">—</div><div class="lbl">👍 Positiv feedback</div></div>
+        <div class="stat-card"><div class="num" id="stat-down">—</div><div class="lbl">👎 Negativ feedback</div></div>
+        <div class="stat-card"><div class="num" id="stat-tokens">—</div><div class="lbl">Snitt tokens/svar</div></div>
+        <div class="stat-card"><div class="num" id="stat-ms">—</div><div class="lbl">Snitt svarstid (ms)</div></div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tid</th>
+                    <th>Fråga</th>
+                    <th>Svar</th>
+                    <th>Tokens / ms</th>
+                    <th>Fb</th>
+                </tr>
+            </thead>
+            <tbody id="conv-tbody">
+                <tr><td colspan="5" id="empty-state">Laddar…</td></tr>
+            </tbody>
+        </table>
+        <div class="pagination" id="pagination"></div>
+    </div>
+</main>
+
+<!-- Modal för fullständigt svar -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+    <div class="modal">
+        <button class="modal-close" onclick="document.getElementById('modal').classList.remove('open')">✕</button>
+        <h3>Konversation</h3>
+        <div class="modal-label">Fråga</div>
+        <div class="modal-text" id="modal-question"></div>
+        <div class="modal-label">Svar</div>
+        <div class="modal-text" id="modal-answer"></div>
+        <div class="modal-meta" id="modal-meta"></div>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1;
+    const pageSize = 25;
+
+    async function loadStats() {
+        try {
+            const res = await fetch('/api/conversation/stats', { headers: { 'Referer': location.href } });
+            if (!res.ok) return;
+            const s = await res.json();
+            document.getElementById('stat-total').textContent  = s.total;
+            document.getElementById('stat-up').textContent     = s.thumbsUp;
+            document.getElementById('stat-down').textContent   = s.thumbsDown;
+            document.getElementById('stat-tokens').textContent = s.avgTokens || '—';
+            document.getElementById('stat-ms').textContent     = s.avgResponseMs || '—';
+        } catch {}
+    }
+
+    async function loadPage(page) {
+        currentPage = page;
+        try {
+            const res = await fetch(`/api/conversation?page=${page}&pageSize=${pageSize}`);
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            renderTable(data.logs);
+            renderPagination(data.total, page);
+        } catch {
+            document.getElementById('conv-tbody').innerHTML =
+                '<tr><td colspan="5" id="empty-state">Kunde inte ladda data. Kontrollera att servern körs.</td></tr>';
+        }
+    }
+
+    function renderTable(logs) {
+        const tbody = document.getElementById('conv-tbody');
+        if (!logs.length) {
+            tbody.innerHTML = '<tr><td colspan="5" id="empty-state">Inga konversationer ännu.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = logs.map(l => `
+            <tr onclick="openModal(${JSON.stringify(l).replace(/"/g, '&quot;')})">
+                <td class="time-col">${formatTime(l.timestamp)}</td>
+                <td><div class="msg-preview">${esc(l.userMessage)}</div></td>
+                <td><div class="ans-preview">${esc(l.botResponse)}</div></td>
+                <td class="meta-col">${l.tokensUsed ?? '—'} / ${l.responseTimeMs ?? '—'}</td>
+                <td class="fb-col">${feedbackIcon(l.feedback)}</td>
+            </tr>`).join('');
+    }
+
+    function renderPagination(total, page) {
+        const pages = Math.ceil(total / pageSize);
+        if (pages <= 1) { document.getElementById('pagination').innerHTML = ''; return; }
+        let html = `<button class="page-btn" onclick="loadPage(${page-1})" ${page===1?'disabled':''}>‹ Föregående</button>`;
+        const start = Math.max(1, page - 2);
+        const end   = Math.min(pages, page + 2);
+        for (let p = start; p <= end; p++) {
+            html += `<button class="page-btn ${p===page?'active':''}" onclick="loadPage(${p})">${p}</button>`;
+        }
+        html += `<button class="page-btn" onclick="loadPage(${page+1})" ${page===pages?'disabled':''}>Nästa ›</button>`;
+        document.getElementById('pagination').innerHTML = html;
+    }
+
+    function openModal(log) {
+        document.getElementById('modal-question').textContent = log.userMessage;
+        document.getElementById('modal-answer').textContent = log.botResponse;
+        document.getElementById('modal-meta').innerHTML = `
+            <span><strong>Tid:</strong> ${formatTime(log.timestamp)}</span>
+            <span><strong>Tokens:</strong> ${log.tokensUsed ?? '—'}</span>
+            <span><strong>Svarstid:</strong> ${log.responseTimeMs ? log.responseTimeMs + ' ms' : '—'}</span>
+            <span><strong>Feedback:</strong> ${feedbackIcon(log.feedback)} ${log.feedback === true ? 'Positiv' : log.feedback === false ? 'Negativ' : 'Ingen'}</span>`;
+        document.getElementById('modal').classList.add('open');
+    }
+
+    function closeModal(e) {
+        if (e.target === document.getElementById('modal'))
+            document.getElementById('modal').classList.remove('open');
+    }
+
+    function feedbackIcon(fb) {
+        if (fb === true)  return '👍';
+        if (fb === false) return '👎';
+        return '<span style="color:#ddd">—</span>';
+    }
+
+    function formatTime(iso) {
+        return new Date(iso).toLocaleString('sv-SE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function esc(str) {
+        return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    async function logout() {
+        await fetch('/api/admin/logout', { method: 'POST' });
+        window.location.href = '/admin-login.html';
+    }
+
+    loadStats();
+    loadPage(1);
+</script>
+</body>
+</html>

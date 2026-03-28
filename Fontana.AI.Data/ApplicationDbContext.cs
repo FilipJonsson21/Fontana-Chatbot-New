@@ -12,6 +12,7 @@ namespace Fontana.AI.Data
 
         public DbSet<FaqItem> Faqs { get; set; }
         public DbSet<DabasProduct> DabasProducts { get; set; }
+        public DbSet<ConversationLog> ConversationLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

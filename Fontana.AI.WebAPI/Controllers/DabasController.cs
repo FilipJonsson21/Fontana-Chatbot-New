@@ -38,17 +38,35 @@ namespace Fontana.AI.WebAPI.Controllers
             if (!products.Any())
                 return Ok(new { message = "Inga produkter hittades i DABAS för detta GLN-nummer.", synced = 0 });
 
-            // Rensa gamla och spara nya (enkel full-sync)
+            // Upsert-sync: uppdatera befintliga, lägg till nya, ta bort utgångna
             var existing = await _context.DabasProducts.ToListAsync();
-            _context.DabasProducts.RemoveRange(existing);
-
+            var existingByGtin = existing.ToDictionary(p => p.Gtin);
+            var incomingGtins = products.Select(p => p.Gtin).ToHashSet();
             var now = DateTime.UtcNow;
+
+            // Ta bort produkter som inte längre finns i DABAS
+            var toRemove = existing.Where(p => !incomingGtins.Contains(p.Gtin)).ToList();
+            _context.DabasProducts.RemoveRange(toRemove);
+
             foreach (var product in products)
             {
                 product.LastSynced = now;
+                if (existingByGtin.TryGetValue(product.Gtin, out var existingProduct))
+                {
+                    // Uppdatera befintlig rad i stället för att radera och återskapa
+                    existingProduct.ProductName  = product.ProductName;
+                    existingProduct.Ingredients  = product.Ingredients;
+                    existingProduct.Allergens    = product.Allergens;
+                    existingProduct.Origin       = product.Origin;
+                    existingProduct.Nutrition    = product.Nutrition;
+                    existingProduct.LastSynced   = now;
+                }
+                else
+                {
+                    _context.DabasProducts.Add(product);
+                }
             }
 
-            await _context.DabasProducts.AddRangeAsync(products);
             await _context.SaveChangesAsync();
 
             // Rensa produktcachen så ChatService hämtar ny data nästa anrop
