@@ -156,6 +156,18 @@
     .frixos-send:hover { background: #0a3d6b; }
     .frixos-send svg { width: 18px; height: 18px; fill: white; pointer-events: none; }
     .frixos-send:disabled { background: #ccc; cursor: not-allowed; }
+    .frixos-suggestions {
+        display: flex; flex-wrap: wrap; gap: 8px;
+        padding: 0 20px 4px; background: #faf8f5;
+    }
+    .frixos-suggestion {
+        background: white; border: 1px solid #e0dbd2;
+        border-radius: 16px; padding: 6px 14px;
+        font-size: 13px; color: ${PRIMARY}; cursor: pointer;
+        font-family: inherit; transition: all 0.15s;
+        white-space: nowrap;
+    }
+    .frixos-suggestion:hover { background: ${PRIMARY}; color: white; border-color: ${PRIMARY}; }
     .frixos-footer {
         text-align: center; padding: 8px; font-size: 10px;
         color: #bbb; background: white; font-family: sans-serif; flex-shrink: 0;
@@ -194,6 +206,7 @@
             <button class="frixos-btn-close" id="frixos-btn-close" title="Stäng" aria-label="Stäng chatt">✕</button>
         </div>
         <div class="frixos-msgs" id="frixos-msgs" aria-live="polite"></div>
+        <div class="frixos-suggestions" id="frixos-suggestions"></div>
         <div class="frixos-input-row">
             <input type="text" id="frixos-input"
                    placeholder="Fråga om ingredienser, allergener, produkter…"
@@ -218,13 +231,21 @@
     let savedMessages  = [];   // sparas i localStorage för visning
 
     // Elementer
-    const bubble   = document.getElementById('frixos-bubble');
-    const win      = document.getElementById('frixos-window');
-    const msgs     = document.getElementById('frixos-msgs');
-    const input    = document.getElementById('frixos-input');
-    const sendBtn  = document.getElementById('frixos-send');
-    const closeBtn = document.getElementById('frixos-btn-close');
-    const clearBtn = document.getElementById('frixos-btn-clear');
+    const SUGGESTIONS = [
+        'Vilka produkter har ni?',
+        'Innehåller era produkter gluten?',
+        'Var tillverkas era produkter?',
+        'Hur kontaktar jag er?',
+    ];
+
+    const bubble      = document.getElementById('frixos-bubble');
+    const win         = document.getElementById('frixos-window');
+    const msgs        = document.getElementById('frixos-msgs');
+    const suggestionsEl = document.getElementById('frixos-suggestions');
+    const input       = document.getElementById('frixos-input');
+    const sendBtn     = document.getElementById('frixos-send');
+    const closeBtn    = document.getElementById('frixos-btn-close');
+    const clearBtn    = document.getElementById('frixos-btn-clear');
 
     // ── localStorage ──
     function saveToStorage() {
@@ -325,6 +346,26 @@
         bubble.setAttribute('aria-expanded', isOpen);
     }
 
+    // ── Snabbfrågor ──
+    function showSuggestions() {
+        suggestionsEl.innerHTML = '';
+        SUGGESTIONS.forEach(q => {
+            const btn = document.createElement('button');
+            btn.className = 'frixos-suggestion';
+            btn.textContent = q;
+            btn.addEventListener('click', () => {
+                hideSuggestions();
+                input.value = q;
+                sendMessage();
+            });
+            suggestionsEl.appendChild(btn);
+        });
+    }
+
+    function hideSuggestions() {
+        suggestionsEl.innerHTML = '';
+    }
+
     // ── Ny chatt ──
     function clearChat() {
         chatHistory   = [];
@@ -332,6 +373,7 @@
         localStorage.removeItem(STORAGE_KEY);
         msgs.innerHTML = '';
         pushMsg(WELCOME, 'bot');
+        showSuggestions();
     }
 
     // ── Skicka meddelande ──
@@ -341,6 +383,7 @@
 
         input.value  = '';
         sendBtn.disabled = true;
+        hideSuggestions();
         pushMsg(text, 'user');
         chatHistory.push({ role: 'user', content: text });
         showTyping();
@@ -415,6 +458,7 @@
         renderAll();
     } else {
         pushMsg(WELCOME, 'bot');
+        showSuggestions();
     }
 
 })();
