@@ -110,6 +110,8 @@
         align-self: flex-end; background: ${PRIMARY}; color: white;
         border-bottom-right-radius: 4px;
     }
+    .frixos-msg a { color: ${PRIMARY}; word-break: break-word; }
+    .frixos-msg.frixos-user a { color: white; }
     .frixos-msg.frixos-typing span {
         display: inline-block; width: 7px; height: 7px;
         background: #aaa; border-radius: 50%;
@@ -281,7 +283,7 @@
             el.innerHTML = '<span></span><span></span><span></span>';
             el.id = 'frixos-typing';
         } else {
-            el.innerHTML = _esc(text).replace(/\n/g, '<br>');
+            el.innerHTML = _linkify(_esc(text)).replace(/\n/g, '<br>');
         }
         msgs.appendChild(el);
 
@@ -438,6 +440,22 @@
         return String(s ?? '')
             .replace(/&/g, '&amp;').replace(/</g, '&lt;')
             .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    // Gör om enkel Markdown i redan HTML-escapad text till riktig HTML.
+    // Körs EFTER _esc(), så inmatningen innehåller inga råa < > " tecken — säkert att bygga taggar av.
+    // GPT skriver ibland Markdown trots instruktioner om ren text, så vi hanterar det som faktiskt
+    // dyker upp istället för att lita blint på att modellen alltid lyder: Markdown-länkar ([text](url)),
+    // bara URL:er, och **fetstil**. Länkvarianterna provas först per position så en URL inuti [](...)
+    // aldrig dubbel-länkifieras av den råa URL-grenen.
+    function _linkify(escapedText) {
+        return escapedText.replace(
+            /\[([^\[\]]+)\]\((https?:\/\/[^\s<)]+)\)|(https?:\/\/[^\s<]+[^\s<.,;:!?)"'])|\*\*([^*]+)\*\*/g,
+            (match, label, mdUrl, bareUrl, boldText) => {
+                if (mdUrl) return `<a href="${mdUrl}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+                if (bareUrl) return `<a href="${bareUrl}" target="_blank" rel="noopener noreferrer">${bareUrl}</a>`;
+                return `<strong>${boldText}</strong>`;
+            }
+        );
     }
 
     // ── Event listeners ──

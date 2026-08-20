@@ -4,6 +4,7 @@ using Fontana.AI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fontana.AI.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260721083649_AddWinePrivateImportFaq")]
+    partial class AddWinePrivateImportFaq
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -64,10 +67,6 @@ namespace Fontana.AI.Data.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Allergens")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Category")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -185,20 +184,6 @@ namespace Fontana.AI.Data.Migrations
                             Answer = "Nej, vi säljer alkoholhaltiga drycker endast till restauranger och foodservice-kunder — inte direkt till privatpersoner, det är inte tillåtet enligt svensk lag. Vill du som privatperson få tag på ett specifikt vin eller sprit ur vårt sortiment kan du kontakta Systembolagets avdelning för speciella viner och sprit och begära en så kallad privatimport. Systembolaget skickar då en förfrågan vidare till oss, och vi lämnar i så fall ett pris till dem — inte till dig direkt. Det går inte att köpa varan via en restaurang istället.",
                             Category = "Vin & Alkohol",
                             Question = "Kan jag som privatperson köpa vin eller sprit direkt av Fontana?"
-                        },
-                        new
-                        {
-                            Id = 10,
-                            Answer = "Vår halloumi tillverkas med mikrobiell löpe (ystenzym) som framställs med hjälp av mikroorganismen Rhizomucor miehei — inte animalisk löpe (som annars utvinns ur magen hos unga kalvar, lamm eller killingar). Båda typerna av löpe har samma funktion i osttillverkningen: att få mjölken att koagulera så att ost kan bildas. Skillnaden ligger i hur enzymet framställs, och det påverkar normalt inte halloumins smak eller användningsområde på ett märkbart sätt. Eftersom vår halloumi använder mikrobiell löpe är den helt vegetarisk och passar därför fler konsumenter.",
-                            Category = "Ingredienser",
-                            Question = "Använder ni animalisk eller mikrobiell löpe i er halloumi?"
-                        },
-                        new
-                        {
-                            Id = 11,
-                            Answer = "Börja med att tina paketet oöppnat i kylskåp över natten. Låt det sedan ligga i rumstemperatur i 20–30 minuter innan användning, fortfarande oöppnat. När paketet väl är öppnat, ta ett eller några ark i taget och lägg en fuktig kökshandduk över de övriga arken — filodeg torkar och smular lätt sönder annars, både färsk och fryst.",
-                            Category = "Tillagning & Hantering",
-                            Question = "Hur tinar jag er frysta filodeg utan att den går sönder?"
                         });
                 });
 
@@ -248,9 +233,6 @@ namespace Fontana.AI.Data.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AlcoholPercent")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AssortmentType")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Description")

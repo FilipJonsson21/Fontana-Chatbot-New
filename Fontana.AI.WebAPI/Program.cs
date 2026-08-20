@@ -37,7 +37,14 @@ builder.Services.AddOpenApi();
 builder.Services.AddHttpClient<DabasClient>();
 builder.Services.AddHostedService<Fontana.AI.WebAPI.Services.DabasSyncBackgroundService>();
 
-// Rate limiting: max 20 anrop per minut per IP-adress på chat-endpointen
+builder.Services.AddHttpClient<RecipeSyncClient>();
+builder.Services.AddHostedService<Fontana.AI.WebAPI.Services.RecipeSyncBackgroundService>();
+
+builder.Services.AddHttpClient<WineSyncClient>();
+builder.Services.AddHostedService<Fontana.AI.WebAPI.Services.WineSyncBackgroundService>();
+
+// Rate limiting: max 20 anrop per minut per IP-adress på chat-endpointen,
+// max 5 inloggningsförsök per minut per IP-adress på admin-inloggningen
 builder.Services.AddRateLimiter(options =>
 {
     options.AddPolicy("chat", context =>
@@ -47,6 +54,18 @@ builder.Services.AddRateLimiter(options =>
         return RateLimitPartition.GetSlidingWindowLimiter(ip, _ => new SlidingWindowRateLimiterOptions
         {
             PermitLimit = 20,
+            Window = TimeSpan.FromMinutes(1),
+            SegmentsPerWindow = 4,
+            QueueLimit = 0,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+        });
+    });
+    options.AddPolicy("admin-login", context =>
+    {
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetSlidingWindowLimiter(ip, _ => new SlidingWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
             Window = TimeSpan.FromMinutes(1),
             SegmentsPerWindow = 4,
             QueueLimit = 0,
