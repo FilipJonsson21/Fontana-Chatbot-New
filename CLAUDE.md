@@ -199,13 +199,14 @@ This is a full-replace sync — no incremental/delta logic.
 
 ## Git Branch Conventions
 
-Branches follow the pattern `claude/<descriptor>`. Feature work is done on dedicated branches and merged to `master` via pull requests.
+Branches follow the pattern `claude/<descriptor>`. Feature work is done on dedicated branches and merged to `main` via pull requests.
 
 ---
 
 ## What Does Not Exist (Yet)
 
 - **No tests** — no test project or test infrastructure
-- **No CI/CD** — no GitHub Actions, no Dockerfile, no Azure pipelines
-- **No authentication** — CORS is open (`AllowAnyOrigin`); no JWT or API key validation on endpoints
-- **No rate limiting** on the chat endpoint
+- **No Dockerfile** — deploy is `dotnet publish` + zip, not containerized
+- ~~No authentication~~ — `ApiKeyMiddleware` requires `X-Api-Key` on all endpoints except static files, and `AdminAuthMiddleware` gates admin routes separately. CORS is **restricted** via `policy.WithOrigins(allowedOrigins)` (the `AllowedOrigins` config section), not `AllowAnyOrigin`. Still no JWT/user-level auth — it's a single shared API key.
+- ~~No rate limiting~~ — the `chat` policy in `Program.cs` limits each client IP to 20 requests/minute (sliding window), returning a JSON `429` body on rejection
+- ~~No CI/CD~~ — `.github/workflows/azure-deploy.yml` builds and deploys to Azure App Service on every push to `main` (or manual `workflow_dispatch`), via `azure/webapps-deploy@v3`
