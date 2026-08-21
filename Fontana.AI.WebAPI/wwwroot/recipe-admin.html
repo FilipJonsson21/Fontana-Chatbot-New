@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAQ-hantering — Fontana Admin</title>
+    <title>Recepthantering — Fontana Admin</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -44,7 +44,7 @@
 
         /* ── LAYOUT ── */
         main {
-            max-width: 960px;
+            max-width: 1080px;
             margin: 0 auto;
             padding: 40px 24px;
         }
@@ -115,15 +115,6 @@
             transition: border-color 0.2s;
         }
         .toolbar input:focus { border-color: #072852; }
-        .toolbar select {
-            border: 1px solid #e0dbd2;
-            border-radius: 8px;
-            padding: 9px 14px;
-            font-size: 14px;
-            background: white;
-            outline: none;
-            cursor: pointer;
-        }
 
         /* ── TABLE ── */
         .table-wrap {
@@ -132,6 +123,7 @@
             box-shadow: 0 1px 8px rgba(0,0,0,0.07);
             overflow: hidden;
             margin-bottom: 32px;
+            overflow-x: auto;
         }
         table {
             width: 100%;
@@ -148,6 +140,7 @@
             font-weight: 600;
             letter-spacing: 0.5px;
             text-transform: uppercase;
+            white-space: nowrap;
         }
         tbody tr {
             border-bottom: 1px solid #f0ece5;
@@ -162,10 +155,10 @@
             vertical-align: top;
         }
         td.id-col { color: #aaa; font-size: 12px; width: 48px; }
-        td.cat-col { width: 130px; }
+        td.tag-col { width: 110px; }
         td.actions-col { width: 100px; text-align: right; white-space: nowrap; }
 
-        .category-badge {
+        .tag-badge {
             display: inline-block;
             padding: 3px 10px;
             border-radius: 12px;
@@ -173,7 +166,10 @@
             font-weight: 600;
             background: #eef2ff;
             color: #3730a3;
+            margin: 2px 2px 0 0;
         }
+
+        a.recipe-link { color: #072852; }
 
         /* Redigeringsfält i tabellen */
         td textarea, td input[type="text"] {
@@ -186,6 +182,7 @@
             background: #fffef9;
             outline: none;
             resize: vertical;
+            margin-bottom: 6px;
         }
         td textarea { min-height: 60px; }
 
@@ -205,8 +202,6 @@
         .btn:hover { opacity: 0.85; }
         .btn:active { transform: scale(0.97); }
         .btn-primary   { background: #072852; color: white; }
-        .btn-success   { background: #2e7d32; color: white; }
-        .btn-danger    { background: #fdecea; color: #c62828; }
         .btn-secondary { background: #f0ece5; color: #555; }
         .btn-icon {
             background: none;
@@ -234,15 +229,14 @@
         }
         .form-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 16px;
         }
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-group.full { grid-column: 1 / -1; }
         .form-group label { font-size: 12px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
         .form-group input,
-        .form-group textarea,
-        .form-group select {
+        .form-group textarea {
             border: 1px solid #e0dbd2;
             border-radius: 8px;
             padding: 10px 14px;
@@ -254,9 +248,8 @@
             resize: vertical;
         }
         .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus { border-color: #072852; background: white; }
-        .form-group textarea { min-height: 90px; }
+        .form-group textarea:focus { border-color: #072852; background: white; }
+        .form-group textarea { min-height: 70px; }
         .form-actions { margin-top: 20px; display: flex; gap: 10px; }
 
         #empty-state {
@@ -266,11 +259,9 @@
             font-size: 15px;
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 700px) {
             main { padding: 20px 12px; }
             .form-grid { grid-template-columns: 1fr; }
-            thead th:nth-child(3) { display: none; }
-            td.cat-col { display: none; }
         }
     </style>
 </head>
@@ -279,35 +270,32 @@
 <header>
     <div class="logo">F<span>o</span>ntana <span style="color:rgba(255,255,255,0.4);font-weight:normal;font-size:14px;margin-left:8px;">/ Admin</span></div>
     <nav style="display:flex;gap:0;">
-        <a href="/faq-admin.html" style="color:white;text-decoration:none;font-size:13px;margin-right:24px;text-transform:uppercase;letter-spacing:0.5px;">FAQ</a>
-        <a href="/recipe-admin.html" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;margin-right:24px;text-transform:uppercase;letter-spacing:0.5px;">Recept</a>
+        <a href="/faq-admin.html" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;margin-right:24px;text-transform:uppercase;letter-spacing:0.5px;">FAQ</a>
+        <a href="/recipe-admin.html" style="color:white;text-decoration:none;font-size:13px;margin-right:24px;text-transform:uppercase;letter-spacing:0.5px;">Recept</a>
         <a href="/wine-admin.html" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;margin-right:24px;text-transform:uppercase;letter-spacing:0.5px;">Vin</a>
         <a href="/conversations.html" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">Historik</a>
     </nav>
-    <div class="badge">FAQ-hantering</div>
+    <div class="badge">Recepthantering</div>
     <button onclick="logout()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);color:white;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:16px;">Logga ut</button>
 </header>
 
 <main>
-    <h1>FAQ-hantering</h1>
-    <p class="subtitle">Lägg till, redigera och ta bort frågor och svar som Frixos använder.</p>
+    <h1>Recepthantering</h1>
+    <p class="subtitle">Lägg till, redigera och ta bort recept som Frixos kan rekommendera och länka till.</p>
 
     <div class="stats">
         <div class="stat-card">
             <div class="num" id="stat-total">—</div>
-            <div class="lbl">Totalt antal FAQ</div>
+            <div class="lbl">Totalt antal recept</div>
         </div>
         <div class="stat-card">
-            <div class="num" id="stat-categories">—</div>
-            <div class="lbl">Kategorier</div>
+            <div class="num" id="stat-ingredients">—</div>
+            <div class="lbl">Unika huvudingredienser</div>
         </div>
     </div>
 
     <div class="toolbar">
-        <input type="text" id="search" placeholder="Sök fråga eller svar…" oninput="renderTable()">
-        <select id="filter-category" onchange="renderTable()">
-            <option value="">Alla kategorier</option>
-        </select>
+        <input type="text" id="search" placeholder="Sök titel, ingrediens, måltid…" oninput="renderTable()">
     </div>
 
     <div class="table-wrap">
@@ -315,36 +303,52 @@
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Fråga & Svar</th>
-                    <th>Kategori</th>
+                    <th>Recept</th>
+                    <th>Taggar</th>
+                    <th>Länk</th>
                     <th></th>
                 </tr>
             </thead>
-            <tbody id="faq-tbody">
-                <tr><td colspan="4" id="empty-state">Laddar…</td></tr>
+            <tbody id="recipe-tbody">
+                <tr><td colspan="5" id="empty-state">Laddar…</td></tr>
             </tbody>
         </table>
     </div>
 
     <div class="add-form">
-        <h2>+ Lägg till ny FAQ</h2>
+        <h2>+ Lägg till nytt recept</h2>
         <div class="form-grid">
             <div class="form-group full">
-                <label>Fråga</label>
-                <input type="text" id="new-question" placeholder="Skriv frågan här…">
-            </div>
-            <div class="form-group full">
-                <label>Svar</label>
-                <textarea id="new-answer" placeholder="Skriv svaret här…"></textarea>
+                <label>Titel</label>
+                <input type="text" id="new-title" placeholder="t.ex. Grillad halloumi med tzatziki">
             </div>
             <div class="form-group">
-                <label>Kategori</label>
-                <input type="text" id="new-category" placeholder="t.ex. Allergener, Produkter…" list="category-list">
-                <datalist id="category-list"></datalist>
+                <label>Huvudingrediens</label>
+                <input type="text" id="new-mainingredient" placeholder="t.ex. halloumi">
+            </div>
+            <div class="form-group">
+                <label>Måltid</label>
+                <input type="text" id="new-mealtype" placeholder="t.ex. middag, förrätt">
+            </div>
+            <div class="form-group">
+                <label>Tillfälle</label>
+                <input type="text" id="new-occasion" placeholder="t.ex. vardag, grillkväll">
+            </div>
+            <div class="form-group">
+                <label>Recepttyp</label>
+                <input type="text" id="new-recipetype" placeholder="t.ex. vegetariskt, snabbt">
+            </div>
+            <div class="form-group full">
+                <label>Beskrivning</label>
+                <textarea id="new-description" placeholder="Kort beskrivning av receptet…"></textarea>
+            </div>
+            <div class="form-group full">
+                <label>Länk till receptet</label>
+                <input type="text" id="new-url" placeholder="https://www.fontana.se/recept/...">
             </div>
         </div>
         <div class="form-actions">
-            <button class="btn btn-primary" onclick="createFaq()">Spara FAQ</button>
+            <button class="btn btn-primary" onclick="createRecipe()">Spara recept</button>
             <button class="btn btn-secondary" onclick="clearForm()">Rensa</button>
         </div>
     </div>
@@ -353,104 +357,102 @@
 <div id="toast"></div>
 
 <script>
-    let allFaqs = [];
+    let allRecipes = [];
     let editingId = null;
 
     // ── Datahämtning ──
-    async function loadFaqs() {
+    async function loadRecipes() {
         try {
-            const res = await fetch('/api/faq');
+            const res = await fetch('/api/recipe');
             if (!res.ok) throw new Error(res.status);
-            allFaqs = await res.json();
+            allRecipes = await res.json();
             updateStats();
-            updateCategoryFilter();
             renderTable();
         } catch {
-            showToast('Kunde inte ladda FAQ-listan. Kontrollera att servern körs.', 'error');
-            document.getElementById('faq-tbody').innerHTML =
-                '<tr><td colspan="4" id="empty-state">Kunde inte ladda data.</td></tr>';
+            showToast('Kunde inte ladda receptlistan. Kontrollera att servern körs.', 'error');
+            document.getElementById('recipe-tbody').innerHTML =
+                '<tr><td colspan="5" id="empty-state">Kunde inte ladda data.</td></tr>';
         }
     }
 
     // ── Statistik ──
     function updateStats() {
-        document.getElementById('stat-total').textContent = allFaqs.length;
-        const cats = new Set(allFaqs.map(f => f.category).filter(Boolean));
-        document.getElementById('stat-categories').textContent = cats.size;
-    }
-
-    // ── Kategorifilter ──
-    function updateCategoryFilter() {
-        const cats = [...new Set(allFaqs.map(f => f.category).filter(Boolean))].sort();
-        const sel = document.getElementById('filter-category');
-        const current = sel.value;
-        sel.innerHTML = '<option value="">Alla kategorier</option>' +
-            cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
-        sel.value = current;
-
-        // Uppdatera datalist för formuläret
-        document.getElementById('category-list').innerHTML =
-            cats.map(c => `<option value="${esc(c)}">`).join('');
+        document.getElementById('stat-total').textContent = allRecipes.length;
+        const ingredients = new Set(allRecipes.map(r => r.mainIngredient?.toLowerCase()).filter(Boolean));
+        document.getElementById('stat-ingredients').textContent = ingredients.size;
     }
 
     // ── Rendera tabell ──
     function renderTable() {
         const search = document.getElementById('search').value.toLowerCase();
-        const catFilter = document.getElementById('filter-category').value;
 
-        const filtered = allFaqs.filter(f => {
-            const matchSearch = !search ||
-                f.question?.toLowerCase().includes(search) ||
-                f.answer?.toLowerCase().includes(search);
-            const matchCat = !catFilter || f.category === catFilter;
-            return matchSearch && matchCat;
-        });
+        const filtered = allRecipes.filter(r => !search ||
+            r.title?.toLowerCase().includes(search) ||
+            r.mainIngredient?.toLowerCase().includes(search) ||
+            r.mealType?.toLowerCase().includes(search) ||
+            r.occasion?.toLowerCase().includes(search) ||
+            r.recipeType?.toLowerCase().includes(search));
 
-        const tbody = document.getElementById('faq-tbody');
+        const tbody = document.getElementById('recipe-tbody');
 
         if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" id="empty-state">Inga FAQ hittades.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" id="empty-state">Inga recept hittades.</td></tr>';
             return;
         }
 
-        tbody.innerHTML = filtered.map(f => {
-            if (f.id === editingId) return renderEditRow(f);
-            return renderViewRow(f);
+        tbody.innerHTML = filtered.map(r => {
+            if (r.id === editingId) return renderEditRow(r);
+            return renderViewRow(r);
         }).join('');
     }
 
-    function renderViewRow(f) {
+    function tagBadges(r) {
+        return [r.mealType, r.occasion, r.recipeType]
+            .filter(Boolean)
+            .map(t => `<span class="tag-badge">${esc(t)}</span>`)
+            .join('');
+    }
+
+    function renderViewRow(r) {
         return `
-        <tr data-id="${f.id}">
-            <td class="id-col">#${f.id}</td>
+        <tr data-id="${r.id}">
+            <td class="id-col">#${r.id}</td>
             <td>
-                <div style="font-weight:500;margin-bottom:4px;">${esc(f.question)}</div>
-                <div style="color:#666;font-size:13px;line-height:1.5;">${esc(f.answer)}</div>
+                <div style="font-weight:500;margin-bottom:4px;">${esc(r.title)}</div>
+                <div style="color:#888;font-size:12px;margin-bottom:4px;">Huvudingrediens: ${esc(r.mainIngredient)}</div>
+                ${r.description ? `<div style="color:#666;font-size:13px;line-height:1.5;">${esc(r.description)}</div>` : ''}
             </td>
-            <td class="cat-col">
-                ${f.category ? `<span class="category-badge">${esc(f.category)}</span>` : '<span style="color:#ccc">—</span>'}
+            <td class="tag-col">${tagBadges(r) || '<span style="color:#ccc">—</span>'}</td>
+            <td style="max-width:200px;word-break:break-word;">
+                <a class="recipe-link" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">${esc(r.url)}</a>
             </td>
             <td class="actions-col">
-                <button class="btn-icon" title="Redigera" onclick="startEdit(${f.id})">✏️</button>
-                <button class="btn-icon" title="Ta bort" onclick="deleteFaq(${f.id})">🗑️</button>
+                <button class="btn-icon" title="Redigera" onclick="startEdit(${r.id})">✏️</button>
+                <button class="btn-icon" title="Ta bort" onclick="deleteRecipe(${r.id})">🗑️</button>
             </td>
         </tr>`;
     }
 
-    function renderEditRow(f) {
+    function renderEditRow(r) {
         return `
-        <tr class="editing" data-id="${f.id}">
-            <td class="id-col">#${f.id}</td>
+        <tr class="editing" data-id="${r.id}">
+            <td class="id-col">#${r.id}</td>
             <td>
-                <input type="text" id="edit-question" value="${esc(f.question)}" placeholder="Fråga" style="margin-bottom:8px;">
-                <textarea id="edit-answer" placeholder="Svar">${esc(f.answer)}</textarea>
+                <input type="text" id="edit-title" value="${esc(r.title)}" placeholder="Titel">
+                <input type="text" id="edit-mainingredient" value="${esc(r.mainIngredient)}" placeholder="Huvudingrediens">
+                <textarea id="edit-description" placeholder="Beskrivning">${esc(r.description ?? '')}</textarea>
             </td>
-            <td class="cat-col">
-                <input type="text" id="edit-category" value="${esc(f.category ?? '')}" placeholder="Kategori" list="category-list">
+            <td class="tag-col">
+                <input type="text" id="edit-mealtype" value="${esc(r.mealType ?? '')}" placeholder="Måltid">
+                <input type="text" id="edit-occasion" value="${esc(r.occasion ?? '')}" placeholder="Tillfälle">
+                <input type="text" id="edit-recipetype" value="${esc(r.recipeType ?? '')}" placeholder="Recepttyp">
             </td>
-            <td class="actions-col">
-                <button class="btn-icon" title="Spara" onclick="saveEdit(${f.id})">💾</button>
-                <button class="btn-icon" title="Avbryt" onclick="cancelEdit()">✕</button>
+            <td colspan="2">
+                <input type="text" id="edit-url" value="${esc(r.url)}" placeholder="Länk">
+                <div style="display:flex;gap:6px;margin-top:6px;">
+                    <button class="btn-icon" title="Spara" onclick="saveEdit(${r.id})">💾</button>
+                    <button class="btn-icon" title="Avbryt" onclick="cancelEdit()">✕</button>
+                </div>
             </td>
         </tr>`;
     }
@@ -459,7 +461,7 @@
     function startEdit(id) {
         editingId = id;
         renderTable();
-        document.getElementById('edit-question')?.focus();
+        document.getElementById('edit-title')?.focus();
     }
 
     function cancelEdit() {
@@ -467,87 +469,91 @@
         renderTable();
     }
 
-    async function saveEdit(id) {
-        const question = document.getElementById('edit-question').value.trim();
-        const answer   = document.getElementById('edit-answer').value.trim();
-        const category = document.getElementById('edit-category').value.trim();
+    function collectFormValues(prefix) {
+        return {
+            title: document.getElementById(`${prefix}-title`).value.trim(),
+            mainIngredient: document.getElementById(`${prefix}-mainingredient`).value.trim(),
+            mealType: document.getElementById(`${prefix}-mealtype`).value.trim() || null,
+            occasion: document.getElementById(`${prefix}-occasion`).value.trim() || null,
+            recipeType: document.getElementById(`${prefix}-recipetype`).value.trim() || null,
+            description: document.getElementById(`${prefix}-description`).value.trim() || null,
+            url: document.getElementById(`${prefix}-url`).value.trim()
+        };
+    }
 
-        if (!question || !answer) {
-            showToast('Fråga och svar får inte vara tomma.', 'error');
+    async function saveEdit(id) {
+        const body = collectFormValues('edit');
+
+        if (!body.title || !body.mainIngredient || !body.url) {
+            showToast('Titel, huvudingrediens och länk är obligatoriska.', 'error');
             return;
         }
 
         try {
-            const res = await fetch(`/api/faq/${id}`, {
+            const res = await fetch(`/api/recipe/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question, answer, category })
+                body: JSON.stringify(body)
             });
             if (!res.ok) throw new Error(res.status);
             const updated = await res.json();
-            allFaqs = allFaqs.map(f => f.id === id ? updated : f);
+            allRecipes = allRecipes.map(r => r.id === id ? updated : r);
             editingId = null;
             updateStats();
-            updateCategoryFilter();
             renderTable();
-            showToast('FAQ uppdaterad!', 'success');
+            showToast('Recept uppdaterat!', 'success');
         } catch {
             showToast('Kunde inte spara ändringarna.', 'error');
         }
     }
 
     // ── Skapa ──
-    async function createFaq() {
-        const question = document.getElementById('new-question').value.trim();
-        const answer   = document.getElementById('new-answer').value.trim();
-        const category = document.getElementById('new-category').value.trim();
+    async function createRecipe() {
+        const body = collectFormValues('new');
 
-        if (!question || !answer) {
-            showToast('Fråga och svar är obligatoriska.', 'error');
+        if (!body.title || !body.mainIngredient || !body.url) {
+            showToast('Titel, huvudingrediens och länk är obligatoriska.', 'error');
             return;
         }
 
         try {
-            const res = await fetch('/api/faq', {
+            const res = await fetch('/api/recipe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question, answer, category })
+                body: JSON.stringify(body)
             });
             if (!res.ok) throw new Error(res.status);
             const created = await res.json();
-            allFaqs.push(created);
+            allRecipes.push(created);
             clearForm();
             updateStats();
-            updateCategoryFilter();
             renderTable();
-            showToast('Ny FAQ skapad!', 'success');
+            showToast('Nytt recept skapat!', 'success');
         } catch {
-            showToast('Kunde inte skapa FAQ.', 'error');
+            showToast('Kunde inte skapa receptet.', 'error');
         }
     }
 
     function clearForm() {
-        document.getElementById('new-question').value = '';
-        document.getElementById('new-answer').value = '';
-        document.getElementById('new-category').value = '';
+        ['title', 'mainingredient', 'mealtype', 'occasion', 'recipetype', 'description', 'url']
+            .forEach(f => document.getElementById(`new-${f}`).value = '');
     }
 
     // ── Ta bort ──
-    async function deleteFaq(id) {
-        const faq = allFaqs.find(f => f.id === id);
-        if (!confirm(`Ta bort FAQ:\n"${faq?.question}"\n\nDetta går inte att ångra.`)) return;
+    async function deleteRecipe(id) {
+        const recipe = allRecipes.find(r => r.id === id);
+        if (!confirm(`Ta bort recept:\n"${recipe?.title}"\n\nDetta går inte att ångra.`)) return;
 
         try {
-            const res = await fetch(`/api/faq/${id}`, { method: 'DELETE' });
+            const res = await fetch(`/api/recipe/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error(res.status);
-            allFaqs = allFaqs.filter(f => f.id !== id);
+            allRecipes = allRecipes.filter(r => r.id !== id);
             if (editingId === id) editingId = null;
             updateStats();
-            updateCategoryFilter();
             renderTable();
-            showToast('FAQ borttagen.', 'success');
+            showToast('Recept borttaget.', 'success');
         } catch {
-            showToast('Kunde inte ta bort FAQ.', 'error');
+            showToast('Kunde inte ta bort receptet.', 'error');
         }
     }
 
@@ -574,7 +580,7 @@
         window.location.href = '/admin-login.html';
     }
 
-    loadFaqs();
+    loadRecipes();
 </script>
 </body>
 </html>

@@ -140,6 +140,7 @@ namespace Fontana.AI.Services
             {
                 Gtin = detail.Gtin ?? string.Empty,
                 ProductName = produktnamn,
+                Category = listItem?.Artikelkategori ?? string.Empty,
                 Ingredients = detail.Ingrediensforteckning ?? string.Empty,
                 Allergens = detail.Allergenpastande ?? string.Empty,
                 Origin = detail.Ursprungsland ?? string.Empty,
@@ -156,6 +157,7 @@ namespace Fontana.AI.Services
             {
                 Gtin = item.Gtin,
                 ProductName = string.IsNullOrEmpty(item.Produktnamn) ? item.Artikelbenamning : item.Produktnamn,
+                Category = item.Artikelkategori,
                 Ingredients = string.Empty,
                 Allergens = string.Empty,
                 Origin = string.Empty,

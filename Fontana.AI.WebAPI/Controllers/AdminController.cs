@@ -1,5 +1,6 @@
 using Fontana.AI.WebAPI.Middleware;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Fontana.AI.WebAPI.Controllers
 {
@@ -19,12 +20,14 @@ namespace Fontana.AI.WebAPI.Controllers
 
         // POST /api/admin/login — validerar lösenord och sätter admin-cookie
         [HttpPost("login")]
+        [EnableRateLimiting("admin-login")]
         public IActionResult Login([FromBody] AdminLoginRequest request)
         {
             var adminPassword = _configuration["AdminPassword"] ?? "";
+            var apiKey = _configuration["ApiKey"] ?? "";
 
-            if (string.IsNullOrEmpty(adminPassword))
-                return StatusCode(503, new { error = "AdminPassword är inte konfigurerat på servern." });
+            if (string.IsNullOrEmpty(adminPassword) || string.IsNullOrEmpty(apiKey))
+                return StatusCode(503, new { error = "AdminPassword eller ApiKey är inte konfigurerat på servern." });
 
             if (!string.Equals(request.Password, adminPassword, StringComparison.Ordinal))
                 return Unauthorized(new { error = "Fel lösenord." });
@@ -36,7 +39,7 @@ namespace Fontana.AI.WebAPI.Controllers
                 HttpOnly  = true,                          // Inte tillgänglig via JavaScript
                 Secure    = !_env.IsDevelopment(),         // Kräv HTTPS i produktion
                 SameSite  = SameSiteMode.Strict,           // Skyddar mot CSRF
-                Expires   = DateTimeOffset.UtcNow.AddHours(8)
+                Expires   = DateTimeOffset.UtcNow.Add(AdminAuthMiddleware.SessionLifetime)
             });
 
             return Ok(new { success = true });

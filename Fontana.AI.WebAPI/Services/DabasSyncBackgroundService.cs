@@ -86,6 +86,7 @@ namespace Fontana.AI.WebAPI.Services
                     if (existingByGtin.TryGetValue(product.Gtin, out var existingProduct))
                     {
                         existingProduct.ProductName = product.ProductName;
+                        existingProduct.Category = product.Category;
                         existingProduct.Ingredients = product.Ingredients;
                         existingProduct.Allergens   = product.Allergens;
                         existingProduct.Origin      = product.Origin;

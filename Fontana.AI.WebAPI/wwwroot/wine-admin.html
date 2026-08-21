@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vinhantering — Fontana Admin</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #faf8f5;
+            color: #2c2c2c;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #072852;
+            padding: 0 40px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        header .logo {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        header .logo span { color: #c8a96e; }
+        header .badge {
+            background: rgba(200,169,110,0.2);
+            border: 1px solid #c8a96e;
+            color: #c8a96e;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        main {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        h1 {
+            font-size: 26px;
+            color: #072852;
+            font-weight: normal;
+            margin-bottom: 6px;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .notice {
+            background: #fff8ec;
+            border: 1px solid #f0dfae;
+            color: #7a5a00;
+            font-size: 13px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 28px;
+        }
+
+        #toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+            pointer-events: none;
+        }
+        #toast.show { opacity: 1; }
+        #toast.success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        #toast.error   { background: #fdecea; color: #c62828; border: 1px solid #ffcdd2; }
+
+        .stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 16px 24px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+            min-width: 120px;
+        }
+        .stat-card .num { font-size: 28px; color: #072852; font-weight: bold; }
+        .stat-card .lbl { font-size: 12px; color: #888; margin-top: 2px; }
+
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .toolbar input {
+            flex: 1;
+            min-width: 200px;
+            border: 1px solid #e0dbd2;
+            border-radius: 8px;
+            padding: 9px 14px;
+            font-size: 14px;
+            background: white;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .toolbar input:focus { border-color: #072852; }
+
+        .table-wrap {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+            overflow: hidden;
+            margin-bottom: 32px;
+            overflow-x: auto;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #072852; color: white; }
+        thead th {
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        tbody tr { border-bottom: 1px solid #f0ece5; transition: background 0.15s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #fdf9f4; }
+        tbody tr.editing { background: #fffbf4; }
+        td { padding: 14px 16px; font-size: 14px; vertical-align: top; }
+        td.id-col { color: #aaa; font-size: 12px; width: 48px; }
+        td.tag-col { width: 130px; }
+        td.actions-col { width: 100px; text-align: right; white-space: nowrap; }
+
+        .tag-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #eef2ff;
+            color: #3730a3;
+            margin: 2px 2px 0 0;
+        }
+
+        a.wine-link { color: #072852; }
+
+        td textarea, td input[type="text"] {
+            width: 100%;
+            border: 1px solid #c8a96e;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 14px;
+            font-family: inherit;
+            background: #fffef9;
+            outline: none;
+            resize: vertical;
+            margin-bottom: 6px;
+        }
+        td textarea { min-height: 60px; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 7px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.15s, transform 0.1s;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary   { background: #072852; color: white; }
+        .btn-secondary { background: #f0ece5; color: #555; }
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: background 0.15s;
+        }
+        .btn-icon:hover { background: #f0ece5; }
+
+        .add-form {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+            padding: 28px;
+        }
+        .add-form h2 { font-size: 17px; color: #072852; margin-bottom: 20px; font-weight: 600; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group label { font-size: 12px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group textarea {
+            border: 1px solid #e0dbd2;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: inherit;
+            background: #faf8f5;
+            outline: none;
+            transition: border-color 0.2s;
+            resize: vertical;
+        }
+        .form-group input:focus, .form-group textarea:focus { border-color: #072852; background: white; }
+        .form-group textarea { min-height: 70px; }
+        .form-actions { margin-top: 20px; display: flex; gap: 10px; }
+
+        #empty-state { text-align: center; padding: 48px; color: #aaa; font-size: 15px; }
+
+        @media (max-width: 700px) {
+            main { padding: 20px 12px; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">F<span>o</span>ntana <span style="color:rgba(255,255,255,0.4);font-weight:normal;font-size:14px;margin-left:8px;">/ Admin</span></div>
+    <nav style="display:flex;gap:0;">
+        <a href="/faq-admin.html" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;margin-right:24px;text-transform:uppercase;letter-spacing:0.5px;">FAQ</a>
+        <a href="/recipe-admin.html" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;margin-right:24px;text-transform:uppercase;letter-spacing:0.5px;">Recept</a>
+        <a href="/wine-admin.html" style="color:white;text-decoration:none;font-size:13px;margin-right:24px;text-transform:uppercase;letter-spacing:0.5px;">Vin</a>
+        <a href="/conversations.html" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">Historik</a>
+    </nav>
+    <div class="badge">Vinhantering</div>
+    <button onclick="logout()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);color:white;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:16px;">Logga ut</button>
+</header>
+
+<main>
+    <h1>Vinhantering</h1>
+    <p class="subtitle">Vin, sprit och andra drycker som Frixos kan hänvisa till — via Systembolaget för privatkunder, via Foodservice-kontakt för restaurang/storkök.</p>
+    <p class="notice">⚠️ Prisfält finns medvetet inte här — Frixos diskuterar aldrig priser på alkohol, och sidorna på fontana.se visar grossistpriser som inte gäller konsument.</p>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="num" id="stat-total">—</div>
+            <div class="lbl">Totalt antal viner/sprit</div>
+        </div>
+        <div class="stat-card">
+            <div class="num" id="stat-with-nr">—</div>
+            <div class="lbl">Med Systembolagsnummer</div>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <input type="text" id="search" placeholder="Sök namn, producent, ursprung…" oninput="renderTable()">
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Namn</th>
+                    <th>Taggar</th>
+                    <th>Systembolagsnr</th>
+                    <th>Länk</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="wine-tbody">
+                <tr><td colspan="6" id="empty-state">Laddar…</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="add-form">
+        <h2>+ Lägg till nytt vin/sprit</h2>
+        <div class="form-grid">
+            <div class="form-group full">
+                <label>Namn</label>
+                <input type="text" id="new-name" placeholder="t.ex. Ouzo of Plomari">
+            </div>
+            <div class="form-group">
+                <label>Typ</label>
+                <input type="text" id="new-type" placeholder="t.ex. Sprit, Vitt vin">
+            </div>
+            <div class="form-group">
+                <label>Producent</label>
+                <input type="text" id="new-producer" placeholder="t.ex. Ouzo of Plomari">
+            </div>
+            <div class="form-group">
+                <label>Ursprung</label>
+                <input type="text" id="new-origin" placeholder="t.ex. Lesvos">
+            </div>
+            <div class="form-group">
+                <label>Alkoholhalt</label>
+                <input type="text" id="new-alcohol" placeholder="t.ex. 40%">
+            </div>
+            <div class="form-group">
+                <label>Systembolagsnummer</label>
+                <input type="text" id="new-systembolag" placeholder="t.ex. 8701502">
+            </div>
+            <div class="form-group">
+                <label>Sortimentstyp</label>
+                <input type="text" id="new-assortment" placeholder="Fast/Beställnings-/Tillfälligt sortiment">
+            </div>
+            <div class="form-group full">
+                <label>Beskrivning</label>
+                <textarea id="new-description" placeholder="Kort beskrivning…"></textarea>
+            </div>
+            <div class="form-group full">
+                <label>Länk</label>
+                <input type="text" id="new-url" placeholder="https://www.fontana.se/vin/...">
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-primary" onclick="createWine()">Spara</button>
+            <button class="btn btn-secondary" onclick="clearForm()">Rensa</button>
+        </div>
+    </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+    let allWines = [];
+    let editingId = null;
+
+    async function loadWines() {
+        try {
+            const res = await fetch('/api/wine');
+            if (!res.ok) throw new Error(res.status);
+            allWines = await res.json();
+            updateStats();
+            renderTable();
+        } catch {
+            showToast('Kunde inte ladda vinlistan. Kontrollera att servern körs.', 'error');
+            document.getElementById('wine-tbody').innerHTML =
+                '<tr><td colspan="6" id="empty-state">Kunde inte ladda data.</td></tr>';
+        }
+    }
+
+    function updateStats() {
+        document.getElementById('stat-total').textContent = allWines.length;
+        document.getElementById('stat-with-nr').textContent = allWines.filter(w => w.systembolagNumber).length;
+    }
+
+    function renderTable() {
+        const search = document.getElementById('search').value.toLowerCase();
+
+        const filtered = allWines.filter(w => !search ||
+            w.name?.toLowerCase().includes(search) ||
+            w.producer?.toLowerCase().includes(search) ||
+            w.origin?.toLowerCase().includes(search) ||
+            w.type?.toLowerCase().includes(search));
+
+        const tbody = document.getElementById('wine-tbody');
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" id="empty-state">Inga viner/sprit hittades.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(w => w.id === editingId ? renderEditRow(w) : renderViewRow(w)).join('');
+    }
+
+    function tagBadges(w) {
+        return [w.type, w.origin, w.alcoholPercent, w.assortmentType]
+            .filter(Boolean)
+            .map(t => `<span class="tag-badge">${esc(t)}</span>`)
+            .join('');
+    }
+
+    function renderViewRow(w) {
+        return `
+        <tr data-id="${w.id}">
+            <td class="id-col">#${w.id}</td>
+            <td>
+                <div style="font-weight:500;margin-bottom:4px;">${esc(w.name)}</div>
+                ${w.producer ? `<div style="color:#888;font-size:12px;margin-bottom:4px;">Producent: ${esc(w.producer)}</div>` : ''}
+                ${w.description ? `<div style="color:#666;font-size:13px;line-height:1.5;">${esc(w.description)}</div>` : ''}
+            </td>
+            <td class="tag-col">${tagBadges(w) || '<span style="color:#ccc">—</span>'}</td>
+            <td>${w.systembolagNumber ? esc(w.systembolagNumber) : '<span style="color:#ccc">—</span>'}</td>
+            <td style="max-width:180px;word-break:break-word;">
+                <a class="wine-link" href="${esc(w.url)}" target="_blank" rel="noopener noreferrer">${esc(w.url)}</a>
+            </td>
+            <td class="actions-col">
+                <button class="btn-icon" title="Redigera" onclick="startEdit(${w.id})">✏️</button>
+                <button class="btn-icon" title="Ta bort" onclick="deleteWine(${w.id})">🗑️</button>
+            </td>
+        </tr>`;
+    }
+
+    function renderEditRow(w) {
+        return `
+        <tr class="editing" data-id="${w.id}">
+            <td class="id-col">#${w.id}</td>
+            <td>
+                <input type="text" id="edit-name" value="${esc(w.name)}" placeholder="Namn">
+                <input type="text" id="edit-producer" value="${esc(w.producer ?? '')}" placeholder="Producent">
+                <textarea id="edit-description" placeholder="Beskrivning">${esc(w.description ?? '')}</textarea>
+            </td>
+            <td class="tag-col">
+                <input type="text" id="edit-type" value="${esc(w.type ?? '')}" placeholder="Typ">
+                <input type="text" id="edit-origin" value="${esc(w.origin ?? '')}" placeholder="Ursprung">
+                <input type="text" id="edit-alcohol" value="${esc(w.alcoholPercent ?? '')}" placeholder="Alkoholhalt">
+            </td>
+            <td>
+                <input type="text" id="edit-systembolag" value="${esc(w.systembolagNumber ?? '')}" placeholder="Systembolagsnr">
+                <input type="text" id="edit-assortment" value="${esc(w.assortmentType ?? '')}" placeholder="Sortimentstyp">
+            </td>
+            <td colspan="2">
+                <input type="text" id="edit-url" value="${esc(w.url)}" placeholder="Länk">
+                <div style="display:flex;gap:6px;margin-top:6px;">
+                    <button class="btn-icon" title="Spara" onclick="saveEdit(${w.id})">💾</button>
+                    <button class="btn-icon" title="Avbryt" onclick="cancelEdit()">✕</button>
+                </div>
+            </td>
+        </tr>`;
+    }
+
+    function startEdit(id) {
+        editingId = id;
+        renderTable();
+        document.getElementById('edit-name')?.focus();
+    }
+
+    function cancelEdit() {
+        editingId = null;
+        renderTable();
+    }
+
+    function collectFormValues(prefix) {
+        return {
+            name: document.getElementById(`${prefix}-name`).value.trim(),
+            type: document.getElementById(`${prefix}-type`).value.trim() || null,
+            producer: document.getElementById(`${prefix}-producer`).value.trim() || null,
+            origin: document.getElementById(`${prefix}-origin`).value.trim() || null,
+            alcoholPercent: document.getElementById(`${prefix}-alcohol`).value.trim() || null,
+            assortmentType: document.getElementById(`${prefix}-assortment`).value.trim() || null,
+            systembolagNumber: document.getElementById(`${prefix}-systembolag`).value.trim() || null,
+            description: document.getElementById(`${prefix}-description`).value.trim() || null,
+            url: document.getElementById(`${prefix}-url`).value.trim()
+        };
+    }
+
+    async function saveEdit(id) {
+        const body = collectFormValues('edit');
+        if (!body.name || !body.url) {
+            showToast('Namn och länk är obligatoriska.', 'error');
+            return;
+        }
+        try {
+            const res = await fetch(`/api/wine/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!res.ok) throw new Error(res.status);
+            const updated = await res.json();
+            allWines = allWines.map(w => w.id === id ? updated : w);
+            editingId = null;
+            updateStats();
+            renderTable();
+            showToast('Uppdaterat!', 'success');
+        } catch {
+            showToast('Kunde inte spara ändringarna.', 'error');
+        }
+    }
+
+    async function createWine() {
+        const body = collectFormValues('new');
+        if (!body.name || !body.url) {
+            showToast('Namn och länk är obligatoriska.', 'error');
+            return;
+        }
+        try {
+            const res = await fetch('/api/wine', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!res.ok) throw new Error(res.status);
+            const created = await res.json();
+            allWines.push(created);
+            clearForm();
+            updateStats();
+            renderTable();
+            showToast('Nytt vin/sprit skapat!', 'success');
+        } catch {
+            showToast('Kunde inte skapa posten.', 'error');
+        }
+    }
+
+    function clearForm() {
+        ['name', 'type', 'producer', 'origin', 'alcohol', 'assortment', 'systembolag', 'description', 'url']
+            .forEach(f => document.getElementById(`new-${f}`).value = '');
+    }
+
+    async function deleteWine(id) {
+        const wine = allWines.find(w => w.id === id);
+        if (!confirm(`Ta bort:\n"${wine?.name}"\n\nDetta går inte att ångra.`)) return;
+        try {
+            const res = await fetch(`/api/wine/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(res.status);
+            allWines = allWines.filter(w => w.id !== id);
+            if (editingId === id) editingId = null;
+            updateStats();
+            renderTable();
+            showToast('Borttaget.', 'success');
+        } catch {
+            showToast('Kunde inte ta bort posten.', 'error');
+        }
+    }
+
+    function showToast(message, type = 'success') {
+        const el = document.getElementById('toast');
+        el.textContent = message;
+        el.className = `show ${type}`;
+        clearTimeout(el._timeout);
+        el._timeout = setTimeout(() => el.className = '', 3000);
+    }
+
+    function esc(str) {
+        return String(str ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    async function logout() {
+        await fetch('/api/admin/logout', { method: 'POST' });
+        window.location.href = '/admin-login.html';
+    }
+
+    loadWines();
+</script>
+</body>
+</html>
